@@ -19,7 +19,7 @@ def Board(specs=Board_specs):
   matrix = np.random.randint(specs.low,specs.high,specs.size)
   return matrix
 
-def Region_Split(matrix):
+def regionSplit(matrix):
   # Convert the matrix into region size (3,3) 
     ZERO = 0 ; CONST = 3 ; MAX_COLUMN_END = 12
     row_start = col_start = ZERO
@@ -60,7 +60,7 @@ class Util:
         # TODO : just transpose the matrix then ylist will be easy to implement
         cls.y_list = [[col[y_index] for col in cls.upd_matrix] for y_index in range(Board_specs.high)]
         cls.y = [line for line in cls.upd_matrix.T]
-        cls.subgrid = Region_Split(cls.upd_matrix)
+        cls.subgrid = regionSplit(cls.upd_matrix)
         cls.subgrid = [arr.tolist() for arr in cls.subgrid]
       
     @staticmethod
@@ -71,7 +71,7 @@ class Util:
     def len_dif(lisst):
         return len(lisst) - len(set(lisst))
     
-class Board_conflicts: # Heuristic component
+class boardConflicts: # Heuristic component
 
     previous_conflicts = 0
 
@@ -91,10 +91,10 @@ class Board_conflicts: # Heuristic component
         # H value
         if self.conflicts < self.previous_conflicts:
             self.reward_H = 2
-        Board_conflicts.previous_conflicts = self.conflicts
+        boardConflicts.previous_conflicts = self.conflicts
         return self.reward_H
 
-class Reward_fn:
+class rewardFunction:
     # Reward function
     def __init__(self,instance):
         Util.Utilities(instance)
@@ -105,7 +105,7 @@ class Reward_fn:
         if not len(self.action)==3: action = action[0]
         assert len(self.action)==3
        
-    def Reward_return(self):
+    def rewardReturns(self):
         if self.action is None : 
             sys.exit(f"{self.__class__.__name__} : Action is None")
         # x
@@ -123,7 +123,7 @@ class Reward_fn:
         self.reward += 9 if (Util.len_dif(region) == 0) else  -Util.len_dif(region)
         return self.reward
 
-def Terminated(instance):
+def gameEnd(instance):
     Util.Utilities(instance)
     matrix = Util.upd_matrix
     y_list = Util.y_list
@@ -172,10 +172,10 @@ class ENVI(gym.Env):
         self.game = Game(action)
         self.updated,_ = Game(action).Updated_board()
        
-        reward_base = Reward_fn(self.game).Reward_return()
-        heuristic = Board_conflicts(self.game).count()
+        reward_base = rewardFunction(self.game).rewardReturns()
+        heuristic = boardConflicts(self.game).count()
         reward = reward_base + heuristic
-        terminated_list = Terminated(self.game)
+        terminated_list = gameEnd(self.game)
         terminated = (True if all(terminated_list) else False)
 
         info = {
@@ -192,35 +192,41 @@ class ENVI(gym.Env):
 if __name__=="__main__":
     class Test:
         def __init__(self, render:bool, episodes:int):
+            
             self.timer = QTimer()
-            self.test = ENVI()
-            self.terminated = False
             self.render = render
+
+            self.environmentClass = ENVI()
+            self.terminated = False
             self.counter = 0
             self.episodes = episodes
-  
-        def main(self):
+        
+        def stepComputing(self):
+            self.environmentClass.reset()
+            self.action = self.environmentClass.action_space.sample()
+            observation, reward, terminated, truncated, info = self.environmentClass.step(self.action)
+            return terminated
             
-            self.test.reset()
+        def guiRender(self):
             if self.counter < self.episodes:
-                action = self.test.action_space.sample()
-                observation, reward, terminated, truncated, info = self.test.step(action)
-                if self.render:
-                    self.test.render()
-                    print(action)
-                else:
-                    print(action)
+                self.environmentClass.render()
+                self.stepComputing()
                 self.counter += 1
             else:
                 self.timer.stop()
                 sys.exit()
         
         def run(self):
-                self.timer.timeout.connect(self.main)
+            if self.render:
+                self.timer.timeout.connect(self.guiRender)
                 self.timer.start(100)
                 app.exec()
-                
-
-    t = Test(render=True,episodes=10)
+            else:
+                while self.counter < self.episodes:
+                    self.stepComputing()
+                    print(self.action)
+                    self.counter+=1
+                    
+    t = Test(render=True,episodes=12)
     t.run()
 

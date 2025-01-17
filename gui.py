@@ -5,10 +5,6 @@ from PySide6 import QtCore
 from PySide6.QtWidgets import QApplication, QWidget,QGridLayout,QLineEdit
 from PySide6.QtGui import QIcon 
 
-app = QApplication.instance()
-if app is None:
-    app = QApplication([])
-
 class Gui(QWidget):
     def __init__(self ):
         super().__init__()
@@ -25,11 +21,11 @@ class Gui(QWidget):
         self.reward_H = 0
         self.conflicts = 0
         self.previous_conflicts = 0
+
         self.cells = [
             [QLineEdit(self) for _ in range(self.size)] 
             for _ in range (self.size)
         ]
-
         # layout for cells 
         for x in range(self.size):
             for y in range(self.size):
@@ -42,6 +38,7 @@ class Gui(QWidget):
 
     def updated(self,action = None ) -> list[list[int]]: 
         #This method update the cells using the "action" parameter and return a matrix of the updated grid
+        # The action is in the shape [x,y,value] or (x,y,value)
         if action is not None:
             self.action = action
             if not isinstance(action,(tuple,list,np.ndarray))  :
