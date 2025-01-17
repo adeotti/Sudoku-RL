@@ -205,7 +205,7 @@ if __name__=="__main__":
             self.environmentClass.reset()
             self.action = self.environmentClass.action_space.sample()
             observation, reward, terminated, truncated, info = self.environmentClass.step(self.action)
-            return terminated
+            return  terminated
             
         def guiRender(self):
             if self.counter < self.episodes:
@@ -214,7 +214,7 @@ if __name__=="__main__":
                 self.counter += 1
             else:
                 self.timer.stop()
-                sys.exit()
+                sys.exit() 
         
         def run(self):
             if self.render:
@@ -227,6 +227,6 @@ if __name__=="__main__":
                     print(self.action)
                     self.counter+=1
                     
-    t = Test(render=True,episodes=12)
+    t = Test(render=False,episodes=10)
     t.run()
 
