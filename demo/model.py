@@ -1,4 +1,3 @@
-import multiprocessing.pool
 import sys
 from tqdm import tqdm
 
@@ -14,7 +13,8 @@ from torchrl.modules import ValueOperator,ProbabilisticActor
 from torchrl.objectives.value import GAE
 from torchrl.objectives import ClipPPOLoss
 # environment 
-from environment_9 import ENVI,Util,Reward_fn
+from .. import main
+from main import ENVI
 from torchrl.envs import TransformedEnv,GymEnv,Compose,DoubleToFloat,UnsqueezeTransform
 # data collection and manipulation
 from torchrl.collectors import SyncDataCollector
@@ -24,6 +24,8 @@ import warnings
 warnings.filterwarnings("ignore")
  
 import numpy as np
+
+sys.exit()
 # hypers 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
