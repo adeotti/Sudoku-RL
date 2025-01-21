@@ -1,4 +1,6 @@
 import sys
+sys.path.append("..")
+from main import ENVI 
 from tqdm import tqdm
 
 import torch
@@ -13,8 +15,8 @@ from torchrl.modules import ValueOperator,ProbabilisticActor
 from torchrl.objectives.value import GAE
 from torchrl.objectives import ClipPPOLoss
 # environment 
-from .. import main
-from main import ENVI
+
+
 from torchrl.envs import TransformedEnv,GymEnv,Compose,DoubleToFloat,UnsqueezeTransform
 # data collection and manipulation
 from torchrl.collectors import SyncDataCollector
@@ -25,7 +27,7 @@ warnings.filterwarnings("ignore")
  
 import numpy as np
 
-sys.exit()
+
 # hypers 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -150,11 +152,11 @@ class Training:
       self.epochs = epochs
 
   def save_logs(self): 
-    log_dir = "board_9/data/"
+    log_dir = "data/"
     self.writer = SummaryWriter(log_dir)
                   
   def save_weight(self): 
-    path = "board_9/data/actor.pth"
+    path = "data/actor.pth"
     torch.save(self.policy.state_dict(),path)
 
   def train(self,start : bool = None):  

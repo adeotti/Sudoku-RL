@@ -5,15 +5,13 @@ from PySide6.QtWidgets import QApplication
 from PySide6.QtCore import QTimer
 from model import ActorNetwork
 
-"""from board_9.model_9 import pnetwork
-from board_9.gui import ENVI"""
 
 app = QApplication.instance()
 if app is None:
     app = QApplication()
 
 actor = ActorNetwork()
-actor.load_state_dict(torch.load("models/actor.pth"))
+actor.load_state_dict(torch.load("data/actor.pth"))
 
 env = gymnasium.make("sudoku")
 
