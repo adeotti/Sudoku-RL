@@ -1,17 +1,47 @@
-# By default, the testing will be perform on the smaller (9) environment with the smaller model
+import sys
+sys.path.append("..")
+from main import ENVI 
 import gymnasium, torch
 from torch.distributions import Categorical
 from PySide6.QtWidgets import QApplication
 from PySide6.QtCore import QTimer
-from model import ActorNetwork
+#rom model import ActorNetwork
+
+import torch.nn.functional as F
+import torch.nn as nn
 
 
 app = QApplication.instance()
 if app is None:
     app = QApplication()
 
+class ActorNetwork(nn.Module):
+  # In order to incorporate a mcts search into the system maybe the actor network should output
+  # many probability distribution instead of just one 
+
+  def __init__(self):
+    super().__init__()
+    self.size = 81
+    self.action_dist = 27
+    self.action_spec = (3,9)
+
+    self.input_layer = nn.LazyLinear(81)
+    self.flat = nn.Flatten()
+    self.dense_one = nn.Linear(self.size,self.size)
+    self.dense_two = nn.Linear(self.size,self.size)
+    self.output = nn.Linear(self.size,self.action_dist)
+    
+  def forward(self,x):
+    x = self.flat(x)
+    x = F.relu(self.input_layer(x))
+    x = F.relu(self.dense_one(x))
+    x = F.relu(self.dense_two(x))
+    x = F.relu(self.output(x))
+    x = torch.unflatten(x,-1,(self.action_spec))
+    return F.softmax(x,-1)
+  
 actor = ActorNetwork()
-actor.load_state_dict(torch.load("data/actor.pth"))
+actor.load_state_dict(torch.load("demo/data/actor.pth"))
 
 env = gymnasium.make("sudoku")
 
