@@ -64,24 +64,40 @@ class Test:
         self.env = env
         self.timer = QTimer()
 
-    def main(self):
-        action = action_generator()
-        self.env.step(action)
-        _,_,terminated,_,_ = self.env.step(action)
-        self.terminated = terminated
-        self.env.render()
-        if self.terminated:
-            self.timer.stop()
+    def stepComputing(self):
+        self.action = action_generator()
+        self.observation, self.reward, self.terminated, self.truncated, self.info = self.env.step(self.action)
+        #return self.terminated
+        # You can normally return (self.terminated) to end the jobs when it value is True 
+        # Reminder : a Sudoku game is consider as complete when all numbers on the x,y and region are unique 
+        # self.terminated evaluate the uniqueness of each number on each x,y and region so if self.terminated = True,
+        #   then the model have solved the game
+
+    def guiRendering(self):
+        while True:
+            self.stepComputing()
+            self.env.render()
             
+        else:
+            self.timer.stop()
+            sys.exit()
+
     def run(self):
         if self.render:
-        self.timer.timeout.connect(self.main)
-        self.timer.start(100)
-        app.exec()
+            self.env.reset()
+            self.timer.timeout.connect(self.guiRendering)
+            self.timer.start(100)
+            app.exec()
+        else:
+            pass
+            #while not self.stepComputing():
+
+     
 
 
 
-test = Test()
+
+test = Test(render=True)
 test.run()
 
 
