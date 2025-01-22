@@ -1,5 +1,4 @@
 import sys
-sys.path.append("..")
 from main import ENVI 
 import gymnasium, torch
 from torch.distributions import Categorical
@@ -41,7 +40,7 @@ class ActorNetwork(nn.Module):
     return F.softmax(x,-1)
   
 actor = ActorNetwork()
-actor.load_state_dict(torch.load("demo/data/actor.pth"))
+actor.load_state_dict(torch.load("data/actor.pth"))
 
 env = gymnasium.make("sudoku")
 
@@ -57,17 +56,16 @@ def action_generator(actor = actor):
     return action
 
 class Test:
-    def __init__(self):
+    def __init__(self,render:bool):
+        self.render = render
         self.terminated = False
         self.observation = None
         self.action = None
         self.env = env
-
         self.timer = QTimer()
 
     def main(self):
         action = action_generator()
-        print(f"action | {action}")
         self.env.step(action)
         _,_,terminated,_,_ = self.env.step(action)
         self.terminated = terminated
@@ -76,9 +74,12 @@ class Test:
             self.timer.stop()
             
     def run(self):
+        if self.render:
         self.timer.timeout.connect(self.main)
         self.timer.start(100)
         app.exec()
+
+
 
 test = Test()
 test.run()

@@ -1,6 +1,5 @@
 import sys
-sys.path.append("..")
-from main import ENVI 
+from main import ENVI
 from tqdm import tqdm
 
 import torch
@@ -26,7 +25,6 @@ import warnings
 warnings.filterwarnings("ignore")
  
 import numpy as np
-
 
 # hypers 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
