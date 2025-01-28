@@ -180,8 +180,7 @@ class Training:
               self.writer.add_scalar("main/batch_number",i)
               self.writer.add_scalar("main/Advantage",dat["advantage"][0].item())
               self.writer.add_scalar("main/Loss_sum",loss_value.item())
-              self.writer.add_scalar("main/reward_advantage",dat["next"]["reward"][0].mean().item())
-              self.writer.add_scalar("main/raw_reward",data_tensordict["next"]["reward"][0].mean().item())
+              self.writer.add_scalar("main/reward",data_tensordict["next"]["reward"][0].mean().item())
               self.writer.add_scalar("loss/Loss_entropy",loss_val["loss_entropy"].item())
               self.writer.add_scalar("loss/Loss_critic",loss_val["loss_critic"].item())
               self.writer.add_scalar("loss/Loss_objective",loss_val["loss_objective"].item())
@@ -189,7 +188,7 @@ class Training:
               currentReward = data_tensordict["next"]["reward"][0].mean()
               rewardHistory.append(currentReward)
               averageReward = sum(rewardHistory)/len(rewardHistory)
-              print(averageReward)
+              self.writer.add_scalar("main/averageReward_movingAverage",averageReward)
 
               if i % 10 == 0:
                  if averageReward > bestReward:
