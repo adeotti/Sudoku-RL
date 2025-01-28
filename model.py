@@ -1,5 +1,6 @@
 from main import ENVI
 from tqdm import tqdm
+from collections import deque
 
 import torch
 import torch.nn as nn
@@ -95,7 +96,9 @@ def Network_util(network : nn.Module):
   network.apply(weights_init)
   return network
 
-Actor = Network_util(ActorNetwork())
+Network_util(ActorNetwork())
+#Actor =  Network_util(ActorNetwork())
+Actor.load_state_dict(torch.load("100k_data/actor_100k.pth"))
 PolicyModule = TensorDictModule(module=ActorNetwork(), in_keys=["observation"],out_keys=["probs"])
 
 PolicyModule = ProbabilisticActor(
@@ -156,14 +159,16 @@ class Training:
 
   def train(self,start : bool = None):  
       if start:
-          higher_loss = float("inf")
+          rewardHistory = deque(maxlen=10)
+          bestReward = -5
           self.save_logs()
           for i,data_tensordict in tqdm(enumerate(self.collector),total = total_frames/frames):   
-              #sys.exit(data_tensordict["action"])
+            
               for e in range(self.epochs):  
                   dat = self.advantage(data_tensordict)
                   dat["advantage"] = dat["advantage"].unsqueeze(-1)
                   self.memory.extend(dat)
+
                   for n in range(total_frames//sub_frame):
                       subdata = Memory.sample(sub_frame)
                       loss_val = self.lossfunction(subdata.to(device)) 
@@ -171,18 +176,24 @@ class Training:
                       loss_value.backward()
                       self.optimizer.step()
                       self.optimizer.zero_grad()
-              # data collection
+          
               self.writer.add_scalar("main/batch_number",i)
               self.writer.add_scalar("main/Advantage",dat["advantage"][0].item())
               self.writer.add_scalar("main/Loss_sum",loss_value.item())
-              self.writer.add_scalar("main/reward",data_tensordict["next"]["reward"][0].mean().item())
+              self.writer.add_scalar("main/reward_advantage",dat["next"]["reward"][0].mean().item())
+              self.writer.add_scalar("main/raw_reward",data_tensordict["next"]["reward"][0].mean().item())
               self.writer.add_scalar("loss/Loss_entropy",loss_val["loss_entropy"].item())
               self.writer.add_scalar("loss/Loss_critic",loss_val["loss_critic"].item())
               self.writer.add_scalar("loss/Loss_objective",loss_val["loss_objective"].item())
-              if  loss_value < higher_loss:
-                  higher_loss = loss_value
-                  self.save_weight()
-          
+
+              currentReward = data_tensordict["next"]["reward"][0].mean()
+              rewardHistory.append(currentReward)
+              averageReward = sum(rewardHistory)/len(rewardHistory)
+
+              if i % 10 == 0:
+                 if averageReward > bestReward:
+                    self.save_weight()
+                    bestReward = averageReward
 
 if __name__ == "__main__":
   Training().train(start=True)
