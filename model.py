@@ -97,7 +97,7 @@ def Network_util(network : nn.Module):
   return network
 
 Network_util(ActorNetwork())
-#Actor =  Network_util(ActorNetwork())
+Actor = ActorNetwork()
 Actor.load_state_dict(torch.load("100k_data/actor_100k.pth"))
 PolicyModule = TensorDictModule(module=ActorNetwork(), in_keys=["observation"],out_keys=["probs"])
 
@@ -160,7 +160,7 @@ class Training:
   def train(self,start : bool = None):  
       if start:
           rewardHistory = deque(maxlen=10)
-          bestReward = -5
+          bestReward = -20
           self.save_logs()
           for i,data_tensordict in tqdm(enumerate(self.collector),total = total_frames/frames):   
             
@@ -189,6 +189,7 @@ class Training:
               currentReward = data_tensordict["next"]["reward"][0].mean()
               rewardHistory.append(currentReward)
               averageReward = sum(rewardHistory)/len(rewardHistory)
+              print(averageReward)
 
               if i % 10 == 0:
                  if averageReward > bestReward:
