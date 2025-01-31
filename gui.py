@@ -31,7 +31,11 @@ class Gui(QWidget):
             for y in range(self.size):
                 self.cells[x][y].setMaximumSize(23,23)
                 self.cells[x][y].setReadOnly(True)
-                self.cells[x][y].setStyleSheet(f"background-color: #{''.join([random.choice('0123456389ABCDEF') for _ in range(6)])};border: 1px solid balck; color: white;")
+                self.cells[x][y].setStyleSheet(f"background-color:grey;border: 1px solid black; color: white")
+                if (y!=0 and y % 3 == 0) :
+                    self.cells[x][y].setStyleSheet(f"border: 1px solid black; color: yellow;")
+                if (  x % 3 == 0) :
+                    self.cells[x][y].setStyleSheet(f" border: 1px solid black; color: yellow;")
                 self.cells[x][y].setText(str(random.randint(1,self.size)))
                 self.cells[x][y].setAlignment(QtCore.Qt.AlignCenter)
                 self.grid.addWidget(self.cells[x][y],x,y)
@@ -49,7 +53,7 @@ class Gui(QWidget):
                 assert len(action) == 3
                 row,column,value = action
                 self.cells[row][column].setText(str(value))
-                self.cells[row][column].setStyleSheet(f"background-color: #{''.join([random.choice('0123456389ABCDEF') for _ in range(6)])};border: 1px solid balck; color: white;")
+                self.cells[row][column].setStyleSheet(f"background-color: # white;border: 1px solid balck; color: white;")
 
         list_text = [] 
         for rw in self.cells :
@@ -62,3 +66,13 @@ class Gui(QWidget):
             for i in range(0,len(list_text),9)
         ]
         return matrix,self.action
+
+
+
+app = QApplication([])
+
+test = Gui()
+test.show()
+app.exec()
+
+#{''.join([random.choice('0123456389ABCDEF') for _ in range(6)])}
