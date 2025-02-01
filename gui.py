@@ -43,6 +43,9 @@ class Gui(QWidget):
                     self.cells[x][y].setText(str(easy[x][y]))
                     self.cells[x][y].setAlignment(QtCore.Qt.AlignCenter)
                     self.grid.addWidget(self.cells[x][y],x,y)
+                    
+                    if self.cells[x][y].text() != 0:
+                        self.cells[x][y].setReadOnly(True)
 
     def updated(self,action = None ) -> list[list[int]]: 
         #This method update the cells using the "action" parameter and return a matrix of the updated grid
@@ -56,8 +59,15 @@ class Gui(QWidget):
                     action = action[0] 
                 assert len(action) == 3
                 row,column,value = action
+                # TODO : assure that only cases containing a zero are modified 
+                
+                #if self.cells[row][column].text() == 0: 
+                print(self.cells[row][column].text()  )
                 self.cells[row][column].setText(str(value))
-                self.cells[row][column].setStyleSheet(f"background-color: # white;border: 1px solid balck; color: white;")
+                print(self.cells[row][column].text() == 0)
+                self.cells[row][column].setStyleSheet(f"background-color: white;border: 1px solid black; color: white;")
+                #else :
+                #    pass
 
         list_text = [] 
         for rw in self.cells :
@@ -76,7 +86,8 @@ class Gui(QWidget):
 app = QApplication([])
 
 test = Gui()
-test.show()
-app.exec()
+print(test.updated((0,0,10)))
+"""test.show()
+app.exec()"""
 
 #{''.join([random.choice('0123456389ABCDEF') for _ in range(6)])}
