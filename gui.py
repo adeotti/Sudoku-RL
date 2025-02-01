@@ -4,6 +4,8 @@ import numpy as np
 from PySide6 import QtCore
 from PySide6.QtWidgets import QApplication, QWidget,QGridLayout,QLineEdit
 from PySide6.QtGui import QIcon 
+from puzzle import easy
+
 
 class Gui(QWidget):
     def __init__(self ):
@@ -13,6 +15,7 @@ class Gui(QWidget):
         self.setMaximumSize(20,20)
         self.setWindowIcon(QIcon("icon.png"))
 
+        self.game = easy
         self.grid = QGridLayout(self)
         self.grid.setSpacing(0)
         self.size = 9 
@@ -27,18 +30,19 @@ class Gui(QWidget):
             for _ in range (self.size)
         ]
         # layout for cells 
-        for x in range(self.size):
-            for y in range(self.size):
-                self.cells[x][y].setMaximumSize(23,23)
-                self.cells[x][y].setReadOnly(True)
-                self.cells[x][y].setStyleSheet(f"background-color:grey;border: 1px solid black; color: white")
-                if (y!=0 and y % 3 == 0) :
-                    self.cells[x][y].setStyleSheet(f"border: 1px solid black; color: yellow;")
-                if (  x % 3 == 0) :
-                    self.cells[x][y].setStyleSheet(f" border: 1px solid black; color: yellow;")
-                self.cells[x][y].setText(str(random.randint(1,self.size)))
-                self.cells[x][y].setAlignment(QtCore.Qt.AlignCenter)
-                self.grid.addWidget(self.cells[x][y],x,y)
+        for line in self.game :
+            for x in range(self.size):
+                for y in range(self.size):
+                    self.cells[x][y].setMaximumSize(23,23)
+                    self.cells[x][y].setReadOnly(True)
+                    self.cells[x][y].setStyleSheet(f"background-color:grey;border: 1px solid black; color: white")
+                    if (y!=0 and y % 3 == 0) :
+                        self.cells[x][y].setStyleSheet(f"border: 1px solid black; color: yellow;")
+                    if (  x % 3 == 0) :
+                        self.cells[x][y].setStyleSheet(f" border: 1px solid black; color: yellow;")
+                    self.cells[x][y].setText(str(easy[x][y]))
+                    self.cells[x][y].setAlignment(QtCore.Qt.AlignCenter)
+                    self.grid.addWidget(self.cells[x][y],x,y)
 
     def updated(self,action = None ) -> list[list[int]]: 
         #This method update the cells using the "action" parameter and return a matrix of the updated grid
