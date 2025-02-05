@@ -31,13 +31,7 @@ class Gui(QWidget):
             [QLineEdit(self) for _ in range(self.size)] 
             for _ in range (self.size)
         ]
-      
-
-        
-
-
-        
-        
+    
         # layout for cells 
         for line in self.game :
             for x in range(self.size):
@@ -45,31 +39,28 @@ class Gui(QWidget):
                     self.cells[x][y].setFixedSize(40,40)
                     self.cells[x][y].setReadOnly(True)
 
+                    number = str(easy[x][y])
+                    self.cells[x][y].setText(number)
+
                     bl = (3 if y%3 ==0 else 0.5)
                     bt = (3 if x%3 == 0 else 0.5)
+                    self.color = ("transparent" if  int(self.cells[x][y].text()) == 0 else "white")
 
                     self.cellStyle = ["background-color:grey;"
-                        f"border-left: {bl}px solid black;"
+                        f"border-left:{bl}px solid black;"
                         f"border-top: {bt}px solid black;"
                         "border-right: 1px solid black;"
                         "border-bottom: 1px solid black;"
-                        "color: white;"
-                        "font-weight: bold;"]
+                        f"color: {self.color};"
+                        "font-weight: bold"]
+                    
                     
                     self.cells[x][y].setStyleSheet("".join(self.cellStyle))
-
-                    value = int(easy[x][y])
-                    self.cells[x][y].setText("" if value == 0 else str(value))
- 
                     self.cells[x][y].setAlignment(QtCore.Qt.AlignCenter)
                     self.grid.addWidget(self.cells[x][y],x,y)
 
-                    
-                    
-              
-
     def updated(self,action = None ) -> list[list[int]]: 
-        #This method update the cells using the "action" parameter and return a matrix of the updated grid
+        # This method update the cells using the "action" parameter and return a matrix of the updated grid
         # The action is in the shape [x,y,value] or (x,y,value)
         if action is not None:
             self.action = action
@@ -80,23 +71,17 @@ class Gui(QWidget):
                     action = action[0] 
                 assert len(action) == 3
                 row,column,value = action
-                # TODO : assure that only cases containing a zero are modified 
-                self.cells[row][column].setStyleSheet(f" border: 1px solid black; color: white;")
+
+                if int(self.cells[row][column].text()) == 0 :
+                    self.cells[row][column].setText(str(value))
+                 
                 #self.cells[row][column].setStyleSheet(f"background-color: grey;border: 1px solid black; color:black;")
-                #else :
-                #    pass
        
         list_text = [] 
         for rw in self.cells :
             for cells in rw:
-                if not cells.text().isdigit():
-                    pass
-                print(cells.text() )
-                 
-                    
-                #list_text.append(cells.text())   
+                list_text.append(cells.text())   
 
-        sys.exit()       
         list_text = [int(element) for element in list_text]
 
         matrix = [
@@ -110,7 +95,7 @@ class Gui(QWidget):
 app = QApplication([])
 
 test = Gui()
-#test.updated((0,3,10))
+test.updated((0,0,10))
 test.show()
 app.exec()
 
