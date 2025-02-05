@@ -1,4 +1,5 @@
 import random 
+import sys
 import numpy as np
  
 from PySide6 import QtCore
@@ -18,6 +19,7 @@ class Gui(QWidget):
         self.game = easy
         self.grid = QGridLayout(self)
         self.grid.setSpacing(0)
+
         self.size = 9 
         self.action = None
         self.reward = 0
@@ -29,23 +31,33 @@ class Gui(QWidget):
             [QLineEdit(self) for _ in range(self.size)] 
             for _ in range (self.size)
         ]
+        self.cellStyle = ["background-color:grey;"
+                            "border: 1px solid black;" 
+                            "color: white"]
         # layout for cells 
         for line in self.game :
             for x in range(self.size):
                 for y in range(self.size):
-                    self.cells[x][y].setMaximumSize(23,23)
+                    self.cells[x][y].setFixedSize(40,40)
                     self.cells[x][y].setReadOnly(True)
-                    self.cells[x][y].setStyleSheet(f"background-color:grey;border: 1px solid black; color: white")
-                    if (y!=0 and y % 3 == 0) :
-                        self.cells[x][y].setStyleSheet(f"border: 1px solid black; color: yellow;")
-                    if (  x % 3 == 0) :
-                        self.cells[x][y].setStyleSheet(f" border: 1px solid black; color: yellow;")
-                    self.cells[x][y].setText(str(easy[x][y]))
+                    self.cells[x][y].setStyleSheet("".join(self.cellStyle))
+
+                    if x % 3 == 0:
+                        pass
+
+                    """if (y!=0 and y % 3 == 0) :
+                        self.cells[x][y].setStyleSheet(f"border-right: 2px ")"""
+                    """if (  x % 3 == 0) :
+                        self.cells[x][y].setStyleSheet(f" border-right: 2px  ") """
+                    value = int(easy[x][y])
+                    self.cells[x][y].setText("" if value == 0 else str(value))
                     self.cells[x][y].setAlignment(QtCore.Qt.AlignCenter)
                     self.grid.addWidget(self.cells[x][y],x,y)
                     
-                    if self.cells[x][y].text() != 0:
-                        self.cells[x][y].setReadOnly(True)
+                    """if int(self.cells[x][y].text()) != 0:
+                        print(self.cells[x][y].text())
+                        #print(self.cells[x][y])"""
+                        
 
     def updated(self,action = None ) -> list[list[int]]: 
         #This method update the cells using the "action" parameter and return a matrix of the updated grid
@@ -60,19 +72,22 @@ class Gui(QWidget):
                 assert len(action) == 3
                 row,column,value = action
                 # TODO : assure that only cases containing a zero are modified 
-                
-                #if self.cells[row][column].text() == 0: 
-                print(self.cells[row][column].text()  )
-                self.cells[row][column].setText(str(value))
-                print(self.cells[row][column].text() == 0)
-                self.cells[row][column].setStyleSheet(f"background-color: white;border: 1px solid black; color: white;")
+                self.cells[row][column].setStyleSheet(f" border: 1px solid black; color: white;")
+                #self.cells[row][column].setStyleSheet(f"background-color: grey;border: 1px solid black; color:black;")
                 #else :
                 #    pass
-
+       
         list_text = [] 
         for rw in self.cells :
             for cells in rw:
-                list_text.append(cells.text())          
+                if not cells.text().isdigit():
+                    cells.text() = 0
+                print(cells.text() )
+                 
+                    
+                #list_text.append(cells.text())   
+
+        sys.exit()       
         list_text = [int(element) for element in list_text]
 
         matrix = [
@@ -86,8 +101,8 @@ class Gui(QWidget):
 app = QApplication([])
 
 test = Gui()
-print(test.updated((0,0,10)))
-"""test.show()
-app.exec()"""
+test.updated((0,3,10))
+test.show()
+app.exec()
 
 #{''.join([random.choice('0123456389ABCDEF') for _ in range(6)])}
