@@ -31,33 +31,54 @@ class Gui(QWidget):
             [QLineEdit(self) for _ in range(self.size)] 
             for _ in range (self.size)
         ]
-        self.cellStyle = ["background-color:grey;"
-                            "border: 1px solid black;" 
-                            "color: white"]
+      
+
+        
+
+
+        
+        
         # layout for cells 
         for line in self.game :
             for x in range(self.size):
                 for y in range(self.size):
                     self.cells[x][y].setFixedSize(40,40)
                     self.cells[x][y].setReadOnly(True)
-                    self.cells[x][y].setStyleSheet("".join(self.cellStyle))
 
-                    if x % 3 == 0:
-                        pass
+                    br = (3 if y%3 ==0 else 1)
+                    bb = (3 if x%3 == 0 else 1)
 
+                    self.cellStyle = ["background-color:grey;"
+                        "border-left: 1px solid black;"
+                        f"border-right: {br}px solid black;"
+                        "border-top: 1px solid black;"
+                        f"border-bottom: {bb}px solid black;"
+                        "color: white"]
+
+                    
                     """if (y!=0 and y % 3 == 0) :
                         self.cells[x][y].setStyleSheet(f"border-right: 2px ")"""
                     """if (  x % 3 == 0) :
                         self.cells[x][y].setStyleSheet(f" border-right: 2px  ") """
+                    
+
+                     
+                    self.cells[x][y].setStyleSheet("".join(self.cellStyle))
+                    
+
+
+
+
+
                     value = int(easy[x][y])
                     self.cells[x][y].setText("" if value == 0 else str(value))
+ 
                     self.cells[x][y].setAlignment(QtCore.Qt.AlignCenter)
                     self.grid.addWidget(self.cells[x][y],x,y)
+
                     
-                    """if int(self.cells[x][y].text()) != 0:
-                        print(self.cells[x][y].text())
-                        #print(self.cells[x][y])"""
-                        
+                    
+              
 
     def updated(self,action = None ) -> list[list[int]]: 
         #This method update the cells using the "action" parameter and return a matrix of the updated grid
@@ -81,7 +102,7 @@ class Gui(QWidget):
         for rw in self.cells :
             for cells in rw:
                 if not cells.text().isdigit():
-                    cells.text() = 0
+                    pass
                 print(cells.text() )
                  
                     
@@ -101,7 +122,7 @@ class Gui(QWidget):
 app = QApplication([])
 
 test = Gui()
-test.updated((0,3,10))
+#test.updated((0,3,10))
 test.show()
 app.exec()
 
