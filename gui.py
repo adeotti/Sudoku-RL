@@ -12,7 +12,7 @@ class Gui(QWidget):
     def __init__(self ):
         super().__init__()
 
-        self.setWindowTitle("Sudoku") 
+        self.setWindowTitle("Sudoku")
         self.setMaximumSize(20,20)
         self.setWindowIcon(QIcon("icon.png"))
 
@@ -45,30 +45,18 @@ class Gui(QWidget):
                     self.cells[x][y].setFixedSize(40,40)
                     self.cells[x][y].setReadOnly(True)
 
-                    br = (3 if y%3 ==0 else 1)
-                    bb = (3 if x%3 == 0 else 1)
+                    bl = (3 if y%3 ==0 else 0.5)
+                    bt = (3 if x%3 == 0 else 0.5)
 
                     self.cellStyle = ["background-color:grey;"
-                        "border-left: 1px solid black;"
-                        f"border-right: {br}px solid black;"
-                        "border-top: 1px solid black;"
-                        f"border-bottom: {bb}px solid black;"
-                        "color: white"]
-
+                        f"border-left: {bl}px solid black;"
+                        f"border-top: {bt}px solid black;"
+                        "border-right: 1px solid black;"
+                        "border-bottom: 1px solid black;"
+                        "color: white;"
+                        "font-weight: bold;"]
                     
-                    """if (y!=0 and y % 3 == 0) :
-                        self.cells[x][y].setStyleSheet(f"border-right: 2px ")"""
-                    """if (  x % 3 == 0) :
-                        self.cells[x][y].setStyleSheet(f" border-right: 2px  ") """
-                    
-
-                     
                     self.cells[x][y].setStyleSheet("".join(self.cellStyle))
-                    
-
-
-
-
 
                     value = int(easy[x][y])
                     self.cells[x][y].setText("" if value == 0 else str(value))
