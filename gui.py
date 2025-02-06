@@ -77,13 +77,16 @@ class Gui(QWidget):
                 
                 if int(self.cells[row][column].text()) == 0 :
                     self.cells[row][column].setText(str(value))
+
+                    self.ubl = (3 if (column%3 == 0 and column!= 0) else 0.5)
+                    self.ubt = (3 if (row%3 == 0 and row!= 0) else 0.5)
                     
                     updatedStyle = ["background-color: grey;"
-                        f"border-left:{self.bl}px solid black;"
-                        f"border-top: {self.bt}px solid black;"
+                        f"border-left:{self.ubl}px solid black;"
+                        f"border-top: {self.ubt}px solid black;"
                         "border-right: 1px solid black;"
                         "border-bottom: 1px solid black;"
-                        "color: yellow;"
+                        "color: gold;"
                         "font-weight: None;"
                         "font-size: 20px"]
                     
@@ -107,7 +110,10 @@ if __name__ == "__main__":
 
     app = QApplication([])
     test = Gui()
-
+    test.updated((2,2,9))
+    test.updated((0,3,3))
+    test.updated((3,3,1))
+    test.updated((5,3,6))
     test.show()
     app.exec()
 
