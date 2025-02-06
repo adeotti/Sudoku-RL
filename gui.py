@@ -27,10 +27,19 @@ class Gui(QWidget):
         self.conflicts = 0
         self.previous_conflicts = 0
 
+        self.number = None
+
         self.cells = [
             [QLineEdit(self) for _ in range(self.size)] 
             for _ in range (self.size)
         ]
+
+        self.textChangeFlag : bool = None
+        self.colorSet = None
+
+        def textchange():
+            self.textChangeFlag = True
+
     
         # layout for cells 
         for line in self.game :
@@ -38,13 +47,14 @@ class Gui(QWidget):
                 for y in range(self.size):
                     self.cells[x][y].setFixedSize(40,40)
                     self.cells[x][y].setReadOnly(True)
-
+                    
                     number = str(easy[x][y])
                     self.cells[x][y].setText(number)
 
                     bl = (3 if y%3 ==0 else 0.5)
                     bt = (3 if x%3 == 0 else 0.5)
-                    self.color = ("transparent" if  int(self.cells[x][y].text()) == 0 else "white")
+                    self.color = ("yellow" if  int(self.cells[x][y].text()) == 0 else "white")
+                     
 
                     self.cellStyle = ["background-color:grey;"
                         f"border-left:{bl}px solid black;"
@@ -52,12 +62,16 @@ class Gui(QWidget):
                         "border-right: 1px solid black;"
                         "border-bottom: 1px solid black;"
                         f"color: {self.color};"
-                        "font-weight: bold"]
-                    
+                        "font-weight: None;"
+                        "font-size: 20px"]
+
+                    self.cells[x][y].textChanged.connect(textchange)
                     
                     self.cells[x][y].setStyleSheet("".join(self.cellStyle))
                     self.cells[x][y].setAlignment(QtCore.Qt.AlignCenter)
                     self.grid.addWidget(self.cells[x][y],x,y)
+
+    
 
     def updated(self,action = None ) -> list[list[int]]: 
         # This method update the cells using the "action" parameter and return a matrix of the updated grid
@@ -71,9 +85,15 @@ class Gui(QWidget):
                     action = action[0] 
                 assert len(action) == 3
                 row,column,value = action
-
                 if int(self.cells[row][column].text()) == 0 :
                     self.cells[row][column].setText(str(value))
+
+         
+        if self.textChangeFlag:
+            self.colorSet = "blue"
+        else:
+            self.colorSet = "transparant"
+             
                  
                 #self.cells[row][column].setStyleSheet(f"background-color: grey;border: 1px solid black; color:black;")
        
@@ -90,13 +110,16 @@ class Gui(QWidget):
         ]
         return matrix,self.action
 
+     
 
 
-app = QApplication([])
+if __name__ == "__main__":
 
-test = Gui()
-test.updated((0,0,10))
-test.show()
-app.exec()
+    app = QApplication([])
+
+    test = Gui()
+    test.updated((0,0,10))
+    test.show()
+    app.exec()
 
 #{''.join([random.choice('0123456389ABCDEF') for _ in range(6)])}
