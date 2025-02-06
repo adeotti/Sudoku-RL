@@ -34,13 +34,6 @@ class Gui(QWidget):
             for _ in range (self.size)
         ]
 
-        self.textChangeFlag : bool = None
-        self.colorSet = None
-
-        def textchange():
-            self.textChangeFlag = True
-
-    
         # layout for cells 
         for line in self.game :
             for x in range(self.size):
@@ -51,27 +44,23 @@ class Gui(QWidget):
                     number = str(easy[x][y])
                     self.cells[x][y].setText(number)
 
-                    bl = (3 if y%3 ==0 else 0.5)
-                    bt = (3 if x%3 == 0 else 0.5)
-                    self.color = ("yellow" if  int(self.cells[x][y].text()) == 0 else "white")
-                     
+                    self.bl = (3 if (y%3 == 0 and y!= 0) else 0.5)
+                    self.bt = (3 if (x%3 == 0 and x!= 0) else 0.5)
+
+                    self.color = ("transparent" if int(self.cells[x][y].text()) == 0 else "white" )
 
                     self.cellStyle = ["background-color:grey;"
-                        f"border-left:{bl}px solid black;"
-                        f"border-top: {bt}px solid black;"
+                        f"border-left:{self.bl}px solid black;"
+                        f"border-top: {self.bt}px solid black;"
                         "border-right: 1px solid black;"
                         "border-bottom: 1px solid black;"
                         f"color: {self.color};"
                         "font-weight: None;"
                         "font-size: 20px"]
 
-                    self.cells[x][y].textChanged.connect(textchange)
-                    
                     self.cells[x][y].setStyleSheet("".join(self.cellStyle))
                     self.cells[x][y].setAlignment(QtCore.Qt.AlignCenter)
                     self.grid.addWidget(self.cells[x][y],x,y)
-
-    
 
     def updated(self,action = None ) -> list[list[int]]: 
         # This method update the cells using the "action" parameter and return a matrix of the updated grid
@@ -85,17 +74,20 @@ class Gui(QWidget):
                     action = action[0] 
                 assert len(action) == 3
                 row,column,value = action
+                
                 if int(self.cells[row][column].text()) == 0 :
                     self.cells[row][column].setText(str(value))
-
-         
-        if self.textChangeFlag:
-            self.colorSet = "blue"
-        else:
-            self.colorSet = "transparant"
-             
-                 
-                #self.cells[row][column].setStyleSheet(f"background-color: grey;border: 1px solid black; color:black;")
+                    
+                    updatedStyle = ["background-color: grey;"
+                        f"border-left:{self.bl}px solid black;"
+                        f"border-top: {self.bt}px solid black;"
+                        "border-right: 1px solid black;"
+                        "border-bottom: 1px solid black;"
+                        "color: yellow;"
+                        "font-weight: None;"
+                        "font-size: 20px"]
+                    
+                    self.cells[row][column].setStyleSheet("".join(updatedStyle))
        
         list_text = [] 
         for rw in self.cells :
@@ -110,15 +102,12 @@ class Gui(QWidget):
         ]
         return matrix,self.action
 
-     
-
 
 if __name__ == "__main__":
 
     app = QApplication([])
-
     test = Gui()
-    test.updated((0,0,10))
+
     test.show()
     app.exec()
 
