@@ -2,7 +2,7 @@ import random
 import sys
 import numpy as np
  
-from PySide6 import QtCore
+from PySide6 import QtCore,QtGui
 from PySide6.QtWidgets import QApplication, QWidget,QGridLayout,QLineEdit
 from PySide6.QtGui import QIcon 
 from puzzle import easy
@@ -73,10 +73,17 @@ class Gui(QWidget):
                 if not len(action) == 3:
                     action = action[0] 
                 assert len(action) == 3
+                 
                 row,column,value = action
-                if int(self.cells[row][column].text()) == 0 :
-                    self.cells[row][column].setText(str(value))
 
+                # Checking the cell color, not every cell should be modifiable
+                styleList = self.cells[row][column].styleSheet().split(";")
+                styleDict = {k.strip() : v.strip() for k,v in (element.split(":") for element in styleList)}
+                cellColor = styleDict["color"]
+
+                if cellColor != "white":
+                    self.cells[row][column].setText(str(value))
+            
                     self.ubl = (3 if (column%3 == 0 and column!= 0) else 0.5)
                     self.ubt = (3 if (row%3 == 0 and row!= 0) else 0.5)
                     
@@ -85,12 +92,17 @@ class Gui(QWidget):
                         f"border-top: {self.ubt}px solid black;"
                         "border-right: 1px solid black;"
                         "border-bottom: 1px solid black;"
-                        "color: gold;"
+                        f"color: gold;"
                         "font-weight: None;"
                         "font-size: 20px"]
                     
                     self.cells[row][column].setStyleSheet("".join(updatedStyle))
-       
+    
+                    # Update the cell color
+                    styleList = self.cells[row][column].styleSheet().split(";")
+                    styleDict = {k.strip() : v.strip() for k,v in (element.split(":") for element in styleList)}
+                    cellColor = styleDict["color"]
+                
         list_text = [] 
         for rw in self.cells :
             for cells in rw:
@@ -110,3 +122,12 @@ if __name__ == "__main__":
     test = Gui()
     test.show()
     app.exec()
+
+
+
+
+
+
+    #print(self.cells[row][column].palette().color(QtGui.QPalette.Text).name())
+    #self.color = self.cells[row][column].palette().color(QtGui.QPalette.Text).name()
+       
