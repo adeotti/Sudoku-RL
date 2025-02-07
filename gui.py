@@ -74,7 +74,6 @@ class Gui(QWidget):
                     action = action[0] 
                 assert len(action) == 3
                 row,column,value = action
-                
                 if int(self.cells[row][column].text()) == 0 :
                     self.cells[row][column].setText(str(value))
 
@@ -107,14 +106,7 @@ class Gui(QWidget):
 
 
 if __name__ == "__main__":
-
     app = QApplication([])
     test = Gui()
-    test.updated((2,2,9))
-    test.updated((0,3,3))
-    test.updated((3,3,1))
-    test.updated((5,3,6))
     test.show()
     app.exec()
-
-#{''.join([random.choice('0123456389ABCDEF') for _ in range(6)])}

@@ -52,7 +52,7 @@ class Test:
         if self.render:
             self.env.reset()
             self.timer.timeout.connect(self.guiRendering)
-            self.timer.start(10)
+            self.timer.start(100)
             app.exec()
         else:
             while not self.terminated:

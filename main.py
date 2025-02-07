@@ -219,7 +219,7 @@ if __name__=="__main__":
         def run(self):
             if self.render:
                 self.timer.timeout.connect(self.guiRender)
-                self.timer.start(100)
+                self.timer.start(200)
                 app.exec()
             else:
                 while self.counter < self.episodes:
