@@ -227,6 +227,6 @@ if __name__=="__main__":
                     print(self.action)
                     self.counter+=1
                     
-    t = Test(render=False,episodes=10)
+    t = Test(render=True,episodes=1000)
     t.run()
 

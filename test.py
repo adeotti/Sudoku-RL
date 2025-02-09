@@ -42,7 +42,7 @@ class Test:
     def guiRendering(self):
             if not self.terminated:
                 self.stepComputing()
-                print(self.action)
+                print(f"{self.action}|{self.reward}")
                 self.env.render()
             else:
                 self.timer.stop()
