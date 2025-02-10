@@ -11,7 +11,7 @@ if app is None:
     app = QApplication()
 
 actor = ActorNetwork()
-actor.load_state_dict(torch.load("100k_data/actor_100k.pth"))
+actor.load_state_dict(torch.load("100k_data/actor_100k_V2.pth"))
 
 env = gymnasium.make("sudoku")
 
