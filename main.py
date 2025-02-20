@@ -190,6 +190,7 @@ class ENVI(gym.Env):
    
         
 if __name__=="__main__":
+
     class Test:
         def __init__(self, render:bool, episodes:int):
             
@@ -226,7 +227,7 @@ if __name__=="__main__":
                     self.stepComputing()
                     print(self.action)
                     self.counter+=1
-                    
-    t = Test(render=True,episodes=1000)
-    t.run()
-
+          
+    #t = Test(render=False,episodes=1000)
+    #t.run()
+ 
