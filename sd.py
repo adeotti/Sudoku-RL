@@ -72,8 +72,11 @@ class Game:
 
     def Updated_board(self):
         if self.action is not None:
-            self.action = self.action.int()#.tolist()[0] #tensor([[0, 1, 0]], dtype=torch.int32)
-            #print(self.action[0])
+            
+         
+            #self.action = self.action#.tolist()[0] #tensor([[0, 1, 0]], dtype=torch.int32)
+             
+            
             row,column,value = self.action
             
             if (row,column) in self.modifiableCells:
@@ -147,7 +150,6 @@ class rewardFunction:
             
         # x
       
-        #sys.exit(self.matrix[self.action[0]])
         x = self.matrix[self.action[0]]#; assert len(x) == Board_specs.high
         self.reward += 9 if (Util.len_dif(x) == 0) else - Util.len_dif(x)
         # y
@@ -168,20 +170,22 @@ def gameEnd(instance):
     matrix = Util.upd_matrix
     return torch.equal(solution,matrix)
 
+from torchrl.envs import EnvBase
+from torchrl.data import BoundedTensorSpec,CompositeSpec,OneHotDiscreteTensorSpec
+from tensordict import TensorDictBase,TensorDict
 
 class environment(EnvBase):
     def __init__(self):
         super().__init__()
-        
+
         self.action = None
         self.game = Game(self.action)
         self.updatedBoard,_ = self.game.Updated_board()
 
-        # specs
         self.action_spec = BoundedTensorSpec(
-            low=torch.tensor([0,0,1]),
+            low=torch.tensor([0,0,1]), # the value on the last dim can't be equal to zero, range(1,9)
             high=torch.tensor([9,9,9]),
-            shape=(3,),
+            shape=torch.Size([3,]),
             dtype=torch.int
         )
 
@@ -190,33 +194,128 @@ class environment(EnvBase):
             high=9.0,
             shape=(easyBoard).unsqueeze(0).shape,
             dtype=torch.float32
-            )
-        self.observation_spec = CompositeSpec(observation = self.observation_format) 
-        
+        )
+        self.observation_spec = CompositeSpec(observation = self.observation_format)
+
     def _step(self,tensordict) -> TensorDictBase :
-        self.action = tensordict["action"]
+        self.action = tensordict["action"].tolist()[0] # original shape -> tensor([[0, 1, 2]])
+        #sys.exit(self.action)
         self.updated,_ = Game(self.action).Updated_board()
 
         self.game = Game(self.action)
         reward = rewardFunction(self.game).rewardReturns()
 
-        output = TensorDict({"observation" : torch.tensor(self.updatedBoard).float(),
-                             "reward" : torch.tensor(reward),
-                             "done" : gameEnd(self.game)})
+        output = TensorDict(
+            {
+                "observation" : self.updatedBoard.clone().detach().unsqueeze(0).float(),
+                "reward" : torch.tensor(reward),
+                "done" : gameEnd(self.game)
+            }
+        )
         return output
-        
+
     def _reset(self,tensordict,**kwargs) -> TensorDictBase :
-        output = TensorDict({"observation" : torch.tensor(self.updatedBoard).float() })
+        output = TensorDict(
+            {
+                "observation" :  self.updatedBoard.clone().detach().unsqueeze(0).float()
+                }
+        )
         return output
 
     def _set_seed(self):
         pass
 
+from tqdm import tqdm
+from collections import deque
+
+import torch.nn as nn
+import torch.nn.functional as F
+from torch.distributions import OneHotCategorical,Categorical
+
+from tensordict.nn import TensorDictModule
+
+from torchrl.modules import ValueOperator,ProbabilisticActor
+from torchrl.objectives.value import GAE
+from torchrl.objectives import ClipPPOLoss
+
+from torchrl.collectors import SyncDataCollector
+from torchrl.data import ReplayBuffer,SamplerWithoutReplacement,LazyTensorStorage
+
+from torch.utils.tensorboard import SummaryWriter
+
+
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+# Hypers
+l_rate = 0.01
+sdg_momentum = 0.9
+
+frames =  10             # number of steps
+sub_frame = 5              # for the most inner loop of the training step
+total_frames = 20      # maximum steps
+epochs = 10
+
+gamma = 0.80
+lmbda = 0.99
+
+env = environment()
+
+dummy_observation = env._reset(None)["observation"] 
+action_spec = tuple(env.action_spec.shape) # (3,9)
+action_dist = env.action_spec.shape.numel() # 27
+size = torch.flatten(dummy_observation).shape.numel() # 81
+
+
+@torch.no_grad()
+def weights_init(w):
+  if isinstance(w,(nn.Conv2d,nn.LazyConv2d,nn.LazyLinear)):
+    nn.init.kaiming_uniform(w.weight,mode="fan_in",nonlinearity="relu")
+    if w.bias is not None : nn.init.zeros_(w.bias)
+
+def Network_util(network : nn.Module):
+  network.to(device)
+  network.forward(dummy_observation)
+  network.apply(weights_init)
+  return network
+
+
+class ActorNetwork(nn.Module):
+  def __init__(self):
+    super().__init__()
+    self.size = size
+    self.action_dist = 27
+    self.action_spec = (3,9)
+
+    self.input_layer = nn.LazyLinear(81)
+    self.flat = nn.Flatten()
+    self.dense_one = nn.LazyLinear(self.size)
+    self.dense_two = nn.LazyLinear(self.size)
+    self.output = nn.LazyLinear(self.action_dist)
+
+  def forward(self,x):
+    x = self.flat(x)
+    x = F.relu(self.input_layer(x))
+    x = F.relu(self.dense_one(x))
+    x = F.relu(self.dense_two(x))
+    x = F.relu(self.output(x))
+    x = torch.unflatten(x,-1,(self.action_spec))
+    x = F.softmax(x,-1)
+    return x 
+
+ActorNetwork().forward(dummy_observation)
+Policy = TensorDictModule(module=ActorNetwork(), in_keys=["observation"],out_keys=["probs"])
+PolicyModule = ProbabilisticActor(module=Policy ,spec=env.action_spec,in_keys=["probs"],
+                       distribution_class = Categorical,return_log_prob = True)
+
+Memory = ReplayBuffer(storage=LazyTensorStorage(max_size=frames),sampler=SamplerWithoutReplacement())
+Collector = SyncDataCollector(create_env_fn=env,policy=PolicyModule,frames_per_batch=frames,total_frames=total_frames)
+
 
 if __name__ == "__main__":
+    Collector.rollout()
      
-    rolloutTest = environment()
-    maxSteps = 2
+    #rolloutTest = environment()
+    """maxSteps = 2
     container = []
     x = []
     for n in range(20):
@@ -224,4 +323,32 @@ if __name__ == "__main__":
             container.append(element)
         x.append(torch.equal(container[0],container[1]))
 
-    print(x)
+    print(x)""""""
+    import torch.nn.functional as F
+    from  torch.distributions import Categorical
+    import time
+
+    test = torch.rand((3,9))
+    test[-1,0] = -float("inf")
+    prob = F.softmax(test,-1)
+    sample = Categorical(prob).sample()
+    while sample[-1] !=0 :
+        print(sample)
+        time.sleep(0.2)
+        sample = Categorical(prob).sample()"""
+ 
+    
+    
+    
+    """test = torch.rand(9)
+    # Set the probability of sampling 0 to zero
+    test[0] = -float('inf')  # This will become 0 after softmax
+    sys.exit(test)
+    prob = F.softmax(test, -1)
+    sample = Categorical(prob).sample()
+    while not sample == 0:
+        print(sample)
+        sample = Categorical(prob).sample()"""
+
+  
+    
