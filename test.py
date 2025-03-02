@@ -13,32 +13,43 @@ if app is None:
     app = QApplication()
 
 class ActorNetwork(nn.Module):
-  def __init__(self):
-    super().__init__()
-    self.size = 81
-    self.action_dist = 27
-    self.action_spec = (3,9)
+    def __init__(self):
+        super().__init__()
+        self.size = 81
+        self.outputShape = 27 # 3*9 = 27 haha
+        self.outputReshaped = (3,9)
+    
 
-    self.input_layer = nn.LazyLinear(81)
-    self.flat = nn.Flatten()
-    self.dense_one = nn.Linear(self.size,self.size)
-    self.dense_two = nn.Linear(self.size,self.size)
-    self.output = nn.Linear(self.size,self.action_dist)
+        self.input_layer = nn.LazyLinear(81)
+        self.flat = nn.Flatten()
+        self.dense_one = nn.LazyLinear(self.size)
+        self.dense_two = nn.LazyLinear(self.size)
+        self.output = nn.LazyLinear(self.outputShape)
 
-  def forward(self,x):
-    x = self.flat(x)
-    x = F.relu(self.input_layer(x))
-    #x = torch.flatten(x)
-    x = F.relu(self.dense_one(x))
-    x = F.relu(self.dense_two(x))
-    x = F.relu(self.output(x))
-    x = torch.unflatten(x,-1,(self.action_spec))
-    return F.softmax(x,-1)
-  
-actor = ActorNetwork()
-actor.load_state_dict(torch.load("trainingData/100k_v2/actor_100k.pth"))
+    def forward(self,x):
+        x = self.flat(x)
+        x = F.relu(self.input_layer(x))
+        x = F.relu(self.dense_one(x))
+        x = F.relu(self.dense_two(x))
+        x = F.relu(self.output(x))
+        x = torch.unflatten(x,-1,(self.outputReshaped))
+        return F.softmax(x,-1)
+    
+    def init(self):
+        inittensor = torch.rand([1,3,9]) 
+        self.forward(inittensor)
+        return self
+         
+Actor = ActorNetwork() 
+Actor.forward(torch.rand([1,3,9]))
+Actor.load_state_dict(torch.load("trainingData/new/actor_100k.pth"))
+
+                   
+
+ 
 
 env = gymnasium.make("sudoku")
+sys.exit( )
 
 def format_observation(env = env):
     observation = env.reset()[0]
