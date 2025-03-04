@@ -65,7 +65,7 @@ class ActorNetwork(nn.Module):
     return F.softmax(x,-1)
          
 Actor = networkInit(ActorNetwork())
-Actor.load_state_dict(torch.load("./actor_100k.pth"),strict=False)
+Actor.load_state_dict(torch.load("./actor_1M.pth"),strict=False)
 
 env = gymnasium.make("sudoku")
 

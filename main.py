@@ -3,11 +3,11 @@ from dataclasses import dataclass
 import math,sys
 np.random.seed(42)
 
-from PySide6 import QtCore
-from PySide6.QtWidgets import QApplication, QWidget,QGridLayout,QLineEdit
-from PySide6.QtGui import QIcon 
+ 
+from PySide6.QtWidgets import QApplication 
+ 
 from PySide6.QtCore import QTimer
-from PySide6.QtGui import QCloseEvent
+ 
 
 @dataclass(frozen=True)
 class Board_specs:

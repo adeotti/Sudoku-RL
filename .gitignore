@@ -1,2 +1,5 @@
 #data/*
 model.py
+stateEval.py
+x.py
+trainingData/
