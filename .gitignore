@@ -1,6 +1,7 @@
-#data/*
+Data/
 model.py
 stateEval.py
 x.py
 trainingData/
 att.ipynb
+Training.ipynb

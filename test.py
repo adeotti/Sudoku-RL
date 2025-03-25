@@ -13,8 +13,6 @@ app = QApplication.instance()
 if app is None:
     app = QApplication()
 
- 
-
 x = torch.rand(size=(1,9,9))
  
 @torch.no_grad()
