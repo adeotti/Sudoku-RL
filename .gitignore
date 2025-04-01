@@ -1,8 +1,8 @@
-Data/
+data/
 model.py
 stateEval.py
 x.py
 trainingData/
 att.ipynb
-Training.ipynb
-trainingCode.ipynb
+training.ipynb
+training2.ipynb
