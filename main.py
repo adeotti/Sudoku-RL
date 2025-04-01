@@ -1,13 +1,11 @@
 import numpy as np
 from dataclasses import dataclass
 import math,sys
-from puzzle import easy,solution
+from puzzle import easyBoard,solution
 import torch
 np.random.seed(42)
 
- 
 from PySide6.QtWidgets import QApplication 
- 
 from PySide6.QtCore import QTimer
  
 
@@ -17,16 +15,12 @@ class Board_specs:
   low: int = 1
   high: int = 9
 
-def Board(specs=Board_specs):
-  easy = np.random.randint(specs.low,specs.high,specs.size)
-  return easy
-
 class Game:
     def __init__(self,action = None):
-        self.board = easy 
+        self.board = easyBoard.to(int).numpy()
         self.action = action
         self.reward = 0
-        self.done = np.array_equal(easy,solution)
+        self.done = np.array_equal(easyBoard,solution)
 
         self.modifiableCells = []
         
@@ -164,6 +158,6 @@ if __name__=="__main__":
                     print(self.action)
                     self.counter+=1
           
-    #t = Test(render=False,episodes=1000)
-    #t.run()
+    t = Test(render=True,episodes=100)
+    t.run()
  

@@ -4,8 +4,9 @@ import numpy as np
 from PySide6 import QtCore,QtGui
 from PySide6.QtWidgets import QApplication, QWidget,QGridLayout,QLineEdit
 from PySide6.QtGui import QIcon 
-from puzzle import easy
+from puzzle import easyBoard
 
+easyBoard = easyBoard.to(int).numpy()
 
 class Gui(QWidget):
     def __init__(self ):
@@ -15,7 +16,7 @@ class Gui(QWidget):
         self.setMaximumSize(20,20)
         self.setWindowIcon(QIcon("icon.png"))
 
-        self.game = easy
+        self.game = easyBoard
         self.grid = QGridLayout(self)
         self.grid.setSpacing(0)
 
@@ -40,7 +41,7 @@ class Gui(QWidget):
                     self.cells[x][y].setFixedSize(40,40)
                     self.cells[x][y].setReadOnly(True)
                     
-                    number = str(easy[x][y])
+                    number = str(easyBoard[x][y])
                     self.cells[x][y].setText(number)
 
                     self.bl = (3 if (y%3 == 0 and y!= 0) else 0.5)
@@ -121,12 +122,3 @@ if __name__ == "__main__":
     test = Gui()
     test.show()
     app.exec()
-
-
-
-
-
-
-    #print(self.cells[row][column].palette().color(QtGui.QPalette.Text).name())
-    #self.color = self.cells[row][column].palette().color(QtGui.QPalette.Text).name()
-       
