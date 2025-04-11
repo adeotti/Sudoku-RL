@@ -4,5 +4,5 @@ stateEval.py
 x.py
 trainingData/
 att.ipynb
-training.ipynb
+#training.ipynb
 training2.ipynb
