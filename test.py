@@ -41,29 +41,37 @@ class Mask:
 class ActorNetwork(nn.Module):
   def __init__(self):
     super().__init__()
-    self.size = 81
-    self.outputShape = 27 # 3*9 = 27 haha
-    self.outputReshaped = (3,9)
+    self.batchsize = 1
+    self.action_dist = 27
+    self.action_spec = (3,9)
     self.mask = Mask()
 
-    self.input_layer = nn.LazyLinear(81)
-    self.flat = nn.Flatten()
-    self.dense_one = nn.LazyLinear(self.size)
-    self.dense_two = nn.LazyLinear(self.size)
-    self.output = nn.LazyLinear(self.outputShape)
+    self.inputt = nn.LazyLinear(9)
+    self.conv1 = nn.LazyConv2d(self.batchsize,(3,3))
+    self.conv2 = nn.LazyConv2d(self.batchsize,(3,3))
+    self.conv3 = nn.LazyConv2d(self.batchsize,(3,3))
+    self.conv4 = nn.LazyConv2d(self.batchsize,(3,3))
+    self.output = nn.LazyLinear(self.action_dist)
 
-  def forward(self,x):
-    x = self.flat(x)
-    x = F.relu(self.input_layer(x))
-    x = F.relu(self.dense_one(x))
-    x = F.relu(self.dense_two(x))
+    #self.optimizer = Adam(self.parameters(),lr = lr)
+    
+  def forward(self,x:torch.Tensor):
+    if not x.shape == torch.Size([1,9,9]) :
+      x = x.unsqueeze(0)
+    assert x.shape == torch.Size([1,9,9])
+
+    x = self.conv1(x)
+    x = F.relu(self.conv2(x))
+    x = self.conv3(x)
+    x = F.relu(self.conv4(x))
+    x = torch.flatten(x,1,2)
     x = F.relu(self.output(x))
-    x = torch.unflatten(x,-1,(self.outputReshaped))
+    x = torch.unflatten(x,-1,(self.action_spec))
     x = self.mask.apply(x)
     return F.softmax(x,-1)
          
 Actor = networkInit(ActorNetwork())
-Actor.load_state_dict(torch.load("Data/actor_100k.pth"),strict=False)
+Actor.load_state_dict(torch.load("tdata/policy.pth"),strict=False)
 
 env = gymnasium.make("sudoku")
 
