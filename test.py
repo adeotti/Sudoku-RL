@@ -7,24 +7,13 @@ from PySide6.QtCore import QTimer
 import torch
 import torch.nn.functional as F
 import torch.nn as nn
+import warnings
+warnings.filterwarnings("ignore")
  
 
 app = QApplication.instance()
 if app is None:
     app = QApplication()
-
-x = torch.rand(size=(1,9,9))
- 
-@torch.no_grad()
-def weights_init(w):
-  if isinstance(w,(nn.Conv2d,nn.LazyConv2d,nn.LazyLinear)):
-    nn.init.kaiming_uniform(w.weight,mode="fan_in",nonlinearity="relu")
-    if w.bias is not None : nn.init.zeros_(w.bias)
-
-def networkInit(network : nn.Module):
-  network.forward(x)
-  network.apply(weights_init)
-  return network
 
 class Mask: 
   # This will alter the softmax distribution so value in [x,y,value] != 0 
@@ -52,8 +41,6 @@ class ActorNetwork(nn.Module):
     self.conv3 = nn.LazyConv2d(self.batchsize,(3,3))
     self.conv4 = nn.LazyConv2d(self.batchsize,(3,3))
     self.output = nn.LazyLinear(self.action_dist)
-
-    #self.optimizer = Adam(self.parameters(),lr = lr)
     
   def forward(self,x:torch.Tensor):
     if not x.shape == torch.Size([1,9,9]) :
@@ -70,8 +57,9 @@ class ActorNetwork(nn.Module):
     x = self.mask.apply(x)
     return F.softmax(x,-1)
          
-Actor = networkInit(ActorNetwork())
-Actor.load_state_dict(torch.load("tdata/policy.pth"),strict=False)
+ActorNetwork().forward(torch.rand((1,9,9),dtype=torch.float))
+Actor = ActorNetwork()
+Actor.load_state_dict(torch.load("./data/policy.pth"),strict=False)
 
 env = gymnasium.make("sudoku")
 
@@ -88,36 +76,35 @@ def action_generator(actor = Actor):
 
 class Test:
     def __init__(self,render:bool):
-        self.render = render
-        self.terminated = False
-        self.observation = None
-        self.action = None
-        self.env = env
-        self.timer = QTimer()
+      self.render = render
+      self.terminated = False
+      self.observation = None
+      self.action = None
+      self.env = env
+      self.timer = QTimer()
 
     def stepComputing(self):
-        self.action = action_generator()
-        self.observation, self.reward, self.terminated, self.truncated, self.info = self.env.step(self.action)
+      self.action = action_generator()
+      self.observation, self.reward, self.terminated, self.truncated, self.info = self.env.step(self.action)
 
     def guiRendering(self):
-            if not self.terminated:
-                self.stepComputing()
-                print(f"{self.action}|{self.reward}")
-                self.env.render()
-            else:
-                self.timer.stop()
-                sys.exit()
+      if not self.terminated:
+          self.stepComputing()
+          print(f"{self.action}|{self.reward}")
+          self.env.render()
+      else:
+          self.timer.stop()
+          sys.exit()
 
     def run(self):
-        if self.render:
-            self.env.reset()
-            self.timer.timeout.connect(self.guiRendering)
-            self.timer.start(100)
-            app.exec()
-        else:
-            while not self.terminated:
-                self.stepComputing()
-                print(f"Action : {self.action} | reward : {self.reward}")
+      if self.render:
+          self.env.reset()
+          self.timer.timeout.connect(self.guiRendering)
+          self.timer.start(100)
+          app.exec()
+      else:
+          while not self.terminated:
+              self.stepComputing()
 
      
 test = Test(render=True) # Setting render to false will lead to faster computing obviously.
