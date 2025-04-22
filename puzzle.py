@@ -23,6 +23,7 @@ solution = torch.tensor([
     [9, 6, 1, 7, 5, 3, 8, 2, 4]],dtype=torch.float)
 
  
+ 
 testBoard = torch.tensor([
     [0, 5, 0, 4, 7, 0, 1, 0, 0],
     [4, 9, 6, 8, 2, 1, 3, 5, 7],
