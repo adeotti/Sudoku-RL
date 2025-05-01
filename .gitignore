@@ -1,9 +1,2 @@
-data/
-tdata/
-model.py
-stateEval.py
-x.py
-trainingData/
-att.ipynb
-#training.ipynb
-training2.ipynb
+gui.py
+test.py

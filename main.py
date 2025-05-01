@@ -120,7 +120,7 @@ class ENVI(gym.Env):
    
         
 if __name__=="__main__":
-
+    """
     class Test:
         def __init__(self, render:bool, episodes:int):
             
@@ -160,4 +160,9 @@ if __name__=="__main__":
           
     t = Test(render=True,episodes=100)
     t.run()
+    """
+
+
+t = ENVI()
  
+t.render()
