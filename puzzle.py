@@ -1,5 +1,7 @@
 import torch
 
+# maybe implement an algo to create solvables sudoku
+
 easyBoard = torch.tensor([
     [0, 0, 0, 5, 3, 1, 0, 0, 0],
     [0, 0, 0, 0, 4, 0, 3, 0, 1],

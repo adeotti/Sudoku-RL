@@ -96,8 +96,9 @@ if app is None:
 
 register( id="sudoku", entry_point="__main__:environment")
 
-class environment(gym.Env): # TODO finish implementing reward function and step function
-    def __init__(self):
+class environment(gym.Env):  
+    metadata = {"render_modes": ["human"]}   
+    def __init__(self,render_mode=None):
         super().__init__()
         self.gui = Gui()
         self.action = None
@@ -108,6 +109,7 @@ class environment(gym.Env): # TODO finish implementing reward function and step 
         self.modif_cells = None
         self.state = None
         self.timer = QTimer()
+        self.render_mode = render_mode
 
     def reset(self) -> np.array :
         super().reset(seed=12)
@@ -125,13 +127,14 @@ class environment(gym.Env): # TODO finish implementing reward function and step 
         pass
     
     def render(self):
-        self.gui.show()
-        app.processEvents()
-        time.sleep(0.5)
+        if self.render_mode == "human":
+            self.gui.show()
+            app.processEvents()
+            time.sleep(0.5)
          
 
 if __name__=="__main__":
-    t = gym.make("sudoku")
+    t = gym.make("sudoku",render_mode="human")
     t.reset()
     
     for r in range(50):

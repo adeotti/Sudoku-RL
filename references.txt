@@ -1,0 +1,7 @@
+Mastering Atari, Go, Chess and Shogi by Planning with a Learned Model
+https://arxiv.org/pdf/1911.08265
+
+
+MuZero with Self-competition for Rate Control in VP9 Video Compression
+https://www.researchgate.net/publication/358603941_MuZero_with_Self-competition_for_Rate_Control_in_VP9_Video_Compression
+
