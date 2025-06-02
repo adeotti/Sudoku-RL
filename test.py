@@ -1,5 +1,5 @@
  
-from main import environment
+from environment import environment
 import gymnasium as gym
 import torch,sys,warnings
 from torch.distributions import Categorical
