@@ -1,7 +1,46 @@
-Mastering Atari, Go, Chess and Shogi by Planning with a Learned Model
+MIT OpenCourseWare - Advanced 4. Monte Carlo Tree Search
+https://www.youtube.com/watch?v=xmImNoDc9Z4&t=3478s
+
+
+Original paper : Mastering Atari, Go, Chess and Shogi by Planning with a Learned Model
 https://arxiv.org/pdf/1911.08265
 
 
 MuZero with Self-competition for Rate Control in VP9 Video Compression
 https://www.researchgate.net/publication/358603941_MuZero_with_Self-competition_for_Rate_Control_in_VP9_Video_Compression
+
+
+Harvard CMSA - From AlphaGo to MuZero - Mastering Atari, Go, Chess and Shogi by Planning with a Learned Model
+https://www.youtube.com/watch?v=lVMgxtm5L-U
+
+
+Julian Schrittwieser - MuZero - ICAPS 2020
+https://www.youtube.com/watch?v=L0A86LmH7Yw
+
+
+John Levine - Monte Carlo Tree Search
+https://www.youtube.com/watch?v=UXW2yZndl7U&t=389s
+
+
+London Machine Learning Meetup - Noam Brown | AI for Imperfect-Information Games: Poker and Beyond
+https://www.youtube.com/watch?v=cn8Sld4xQjg&t=1896s
+
+
+Paul G. Allen School - Parables on the Power of Planning in AI: From Poker to Diplomacy: Noam Brown (OpenAI)
+https://www.youtube.com/watch?v=eaAonE58sLU&t=2809s
+
+Monte Carlo Tree Search - Computerphile
+https://www.youtube.com/watch?v=BEFY7IHs0HM
+
+
+Josh Varty - Alpha Zero and Monte Carlo Tree Search
+https://www.youtube.com/watch?v=62nq4Zsn8vc
+
+
+Yannic Kilcher - MuZero: Mastering Atari, Go, Chess and Shogi by Planning with a Learned Model
+https://www.youtube.com/watch?v=We20YSAJZSE
+
+
+Concepts Illuminated - Using MuZero's Tree Search To Find Optimal Tic-Tac-Toe Strategy in a Spreadsheet
+https://www.youtube.com/watch?v=c8SLNEpFSrs
 

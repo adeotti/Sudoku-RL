@@ -89,7 +89,20 @@ class Gui(QWidget):
         matrix = np.array([list_text],dtype=float).reshape(9,9)
         return matrix
  
- 
+
+
+class reward_functiom: # TODO : implement reward function for sudoku
+    def __init__(self):
+        pass
+
+
+
+
+
+
+
+
+
 app = QApplication.instance()
 if app is None:
     app = QApplication([])
@@ -205,6 +218,7 @@ class Env:
         else:
             reward = -((conflicts/2)*0.1 + 5)
         return reward,conflicts.floor()
+
 
 
 """
