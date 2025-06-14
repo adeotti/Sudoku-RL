@@ -1,5 +1,5 @@
 from puzzle import easyBoard,solution
-import torch,random,time
+import torch,random,time,math,sys
 import numpy as np
 
 from PySide6 import QtCore,QtGui
@@ -64,23 +64,39 @@ class Gui(QWidget):
             cellColor = styleDict["color"]
             if cellColor != "white":
                 self.cells[row][column].setText(str(value))
-                self.ubl = (3 if (column%3 == 0 and column!= 0) else 0.5)
-                self.ubt = (3 if (row%3 == 0 and row!= 0) else 0.5)
+                ubl = (3 if (column % 3 == 0 and column!= 0) else 0.5)
+                ubt = (3 if (row % 3 == 0 and row!= 0) else 0.5)
                 updatedStyle = [
-                    "background-color: grey;"
-                    f"border-left:{self.ubl}px solid black;"
-                    f"border-top: {self.ubt}px solid black;"
+                    "background-color: dark grey;"
+                    f"border-left:{ubl}px solid black;"
+                    f"border-top: {ubt}px solid black;"
                     "border-right: 1px solid black;"
                     "border-bottom: 1px solid black;"
                     f"color: gold;"
                     "font-weight: None;"
                     "font-size: 20px"
                 ]
-                self.cells[row][column].setStyleSheet("".join(updatedStyle))
-                # Update the cell color
+                self.cells[row][column].setStyleSheet("".join(updatedStyle)) # Update the cell color flash
+
+                def reset_style():
+                    normalStyle = [
+                        "background-color: grey;",
+                        f"border-left:{ubl}px solid black;",
+                        f"border-top: {ubt}px solid black;",
+                        "border-right: 1px solid black;",
+                        "border-bottom: 1px solid black;",
+                        f"color: gold;",
+                        "font-weight: None;",
+                        "font-size: 20px;"
+                    ]
+                    self.cells[row][column].setStyleSheet("".join(normalStyle)) 
+
+                QTimer.singleShot(20, reset_style)  # Delay in milliseconds
+                
                 styleList = self.cells[row][column].styleSheet().split(";")
                 styleDict = {k.strip() : v.strip() for k,v in (element.split(":") for element in styleList)}
                 cellColor = styleDict["color"]
+
         list_text = [] 
         for rw in self.cells :
             for cells in rw:
@@ -88,19 +104,85 @@ class Gui(QWidget):
         list_text = [int(element) for element in list_text]
         matrix = np.array([list_text],dtype=float).reshape(9,9)
         return matrix
- 
-
-
-class reward_functiom: # TODO : implement reward function for sudoku
-    def __init__(self):
-        pass
 
 
 
+def modifiables(tensor) -> list: 
+    # returns modifiables cells index of a board and a mask
+    modlist = []
+    for i,x in enumerate(tensor):
+        for y in range(9): 
+            if x[y] == 0: 
+                modlist.append((i,y))
+    return modlist
 
 
+def region(index:tuple|list,board: torch.Tensor): 
+    # returns the region (row,column,block) of a cell
+    x,y = index
+    xlist = board[x].tolist()
+    xlist.pop(y)
+
+    ylist = [element[y].tolist() for element in board]
+    ylist.pop(x)
+
+    #block
+    n = int(math.sqrt(9))
+    ix,iy = (x//n)* n , (y//n)* n
+    block = torch.flatten(board[ix:ix+n , iy:iy+n]).tolist()
+    local_row = x - ix
+    local_col = y - iy
+    action_index = local_row * n + local_col
+    block_ = [num for idx, num in enumerate(block) if idx != action_index]
+
+    #output
+    Region = [xlist,ylist,block_]
+    Region = [item for sublist in Region for item in sublist]
+    return Region
 
 
+class reward_function: # domain propagation
+    def __init__(self,state:torch.Tensor | None,modCells:list):
+        self.board = state
+        self.solution = solution
+        self.modCells = modCells
+        self.maxStep = len(modCells)*3
+         
+    def domain(self,idx:tuple|list) -> list :
+        Region = region(idx,self.board )
+        Region = set([item for item in Region if item != 0]) 
+        domain_ = set(range(1,10)) 
+        TrueDomain = list(domain_ - Region)
+        return TrueDomain
+    
+    def collector(self):
+        queu = []
+        for element in self.modCells:
+            queu.append({element : self.domain(element)})
+        return queu
+    
+    def isSolvable(self) -> bool: 
+        if isinstance(self.board,(np.ndarray,torch.Tensor)):
+            count = 0
+            while True:
+                self.__init__(self.board,self.modCells)
+                data = self.collector()
+                for dictt in data:
+                    for k,v in dictt.items():
+                        if len(v) == 1:
+                            self.board[k] = v[0]
+                count+=1
+                if len(data) == 0:
+                    break
+                else:
+                    if count > self.maxStep:
+                        break
+            diff = (self.board == solution)
+            diff = (diff == True).sum().item()
+            if diff == solution.numel(): # if all True cells = 81 :
+                return True
+            else:
+                return False
 
 
 app = QApplication.instance()
@@ -116,28 +198,39 @@ class environment(gym.Env):
         self.gui = Gui()
         self.action = None
         self.action_space = spaces.Tuple(
-            (spaces.Discrete(9,None,0),spaces.Discrete(9,None,0),spaces.Discrete(9,None,1))
+            (
+                spaces.Discrete(9,None,0),
+                spaces.Discrete(9,None,0),
+                spaces.Discrete(9,None,1))
         )
         self.observation_space = spaces.Box(1,9,(9,9),dtype=float)
         self.modif_cells = None
-        self.state = None
+        self.state : np.ndarray = np.zeros((9, 9), dtype=int) # init board
+        
         self.timer = QTimer()
         self.render_mode = render_mode
 
+        self.modif_cells : list = modifiables(easyBoard)
+        self.rewardf = reward_function(None,self.modif_cells)
+        
     def reset(self) -> np.array :
         super().reset(seed=12)
         self.state = self.gui.updated(None)
+        self.state_copy = self.state.copy()
         return self.state,{}
 
     def step(self,action):  
-        self.state = self.gui.updated(action)
-        reward = 0
+        self.state_copy = self.gui.updated(action)
+        if self.rewardf.isSolvable() :
+            self.state = self.gui.updated(action)
+            self.state_copy = self.state
+            reward = 10
+            self.modif_cells.remove(action[:2])
+        else :
+            reward = -10
         info = {}
         done = False
         return np.array(self.state),reward,False,done,info
-
-    def reward_function(self,state): 
-        pass
     
     def render(self):
         if self.render_mode == "human":
@@ -150,8 +243,8 @@ if __name__=="__main__":
     t = gym.make("sudoku",render_mode="human")
     t.reset()
     
-    for r in range(50):
-        t.step((random.randint(0,8),random.randint(0,8),random.randint(1,9)))
+    for r in range(100):
+        _,re,_,_,_ =  t.step((random.randint(0,8),random.randint(0,8),random.randint(1,9)))
         t.render()
     
 
@@ -159,16 +252,6 @@ if __name__=="__main__":
 
 
 """
-
-
-
-
-
-            
-
-
-
-
 class Env:
     def __init__(self):
         self.modifiableCells = modifiableCells.copy()
@@ -219,6 +302,14 @@ class Env:
             reward = -((conflicts/2)*0.1 + 5)
         return reward,conflicts.floor()
 
+        
+
+
+
+
+
+            
+modifiableCells = modi(easyBoard)
 
 
 """

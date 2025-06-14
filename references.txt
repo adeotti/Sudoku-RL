@@ -29,6 +29,7 @@ https://www.youtube.com/watch?v=cn8Sld4xQjg&t=1896s
 Paul G. Allen School - Parables on the Power of Planning in AI: From Poker to Diplomacy: Noam Brown (OpenAI)
 https://www.youtube.com/watch?v=eaAonE58sLU&t=2809s
 
+
 Monte Carlo Tree Search - Computerphile
 https://www.youtube.com/watch?v=BEFY7IHs0HM
 
