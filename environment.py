@@ -50,20 +50,28 @@ class Gui(QWidget):
                     self.cells[x][y].setAlignment(QtCore.Qt.AlignCenter)
                     self.grid.addWidget(self.cells[x][y],x,y)
 
-    def updated(self,action = None ) -> list[list[int]]: 
+    def updated(self,action = None,true_value : bool = False) -> list[list[int]]: 
         if action is not None:
             self.action = action
             assert isinstance(action,(tuple,list,np.ndarray,torch.Tensor))
+
             if not len(action) == 3:
                 action = action[0] 
             assert len(action) == 3
+
             row,column,value = action
             # Checking the cell color, not every cell should be modifiable
             styleList = self.cells[row][column].styleSheet().split(";")
+            if len(styleList) != 8 : 
+                del styleList[-1]
             styleDict = {k.strip() : v.strip() for k,v in (element.split(":") for element in styleList)}
             cellColor = styleDict["color"]
+
             if cellColor != "white":
+
                 self.cells[row][column].setText(str(value))
+                color = ("transparent" if not true_value else "gold")
+                    
                 ubl = (3 if (column % 3 == 0 and column!= 0) else 0.5)
                 ubt = (3 if (row % 3 == 0 and row!= 0) else 0.5)
                 updatedStyle = [
@@ -72,7 +80,7 @@ class Gui(QWidget):
                     f"border-top: {ubt}px solid black;"
                     "border-right: 1px solid black;"
                     "border-bottom: 1px solid black;"
-                    f"color: gold;"
+                    f"color: {color};"
                     "font-weight: None;"
                     "font-size: 20px"
                 ]
@@ -85,7 +93,7 @@ class Gui(QWidget):
                         f"border-top: {ubt}px solid black;",
                         "border-right: 1px solid black;",
                         "border-bottom: 1px solid black;",
-                        f"color: gold;",
+                        f"color: {color};",
                         "font-weight: None;",
                         "font-size: 20px;"
                     ]
@@ -96,7 +104,7 @@ class Gui(QWidget):
                 styleList = self.cells[row][column].styleSheet().split(";")
                 styleDict = {k.strip() : v.strip() for k,v in (element.split(":") for element in styleList)}
                 cellColor = styleDict["color"]
-
+        
         list_text = [] 
         for rw in self.cells :
             for cells in rw:
@@ -104,8 +112,6 @@ class Gui(QWidget):
         list_text = [int(element) for element in list_text]
         matrix = np.array([list_text],dtype=float).reshape(9,9)
         return matrix
-
-
 
 def modifiables(tensor) -> list: 
     # returns modifiables cells index of a board and a mask
@@ -116,8 +122,10 @@ def modifiables(tensor) -> list:
                 modlist.append((i,y))
     return modlist
 
-
-def region(index:tuple|list,board: torch.Tensor): 
+@torch.no_grad()
+def region(index:tuple|list,board: torch.Tensor | np.ndarray): 
+    if isinstance(board,np.ndarray):
+        board = torch.from_numpy(board)
     # returns the region (row,column,block) of a cell
     x,y = index
     xlist = board[x].tolist()
@@ -143,7 +151,7 @@ def region(index:tuple|list,board: torch.Tensor):
 
 class reward_function: # domain propagation
     def __init__(self,state:torch.Tensor | None,modCells:list):
-        self.board = state
+        self.board = torch.tensor(state).clone()
         self.solution = solution
         self.modCells = modCells
         self.maxStep = len(modCells)*3
@@ -161,6 +169,7 @@ class reward_function: # domain propagation
             queu.append({element : self.domain(element)})
         return queu
     
+    @torch.no_grad()
     def isSolvable(self) -> bool: 
         if isinstance(self.board,(np.ndarray,torch.Tensor)):
             count = 0
@@ -183,7 +192,6 @@ class reward_function: # domain propagation
                 return True
             else:
                 return False
-
 
 app = QApplication.instance()
 if app is None:
@@ -211,23 +219,34 @@ class environment(gym.Env):
         self.render_mode = render_mode
 
         self.modif_cells : list = modifiables(easyBoard)
-        self.rewardf = reward_function(None,self.modif_cells)
+        #self.rewardf = reward_function
         
     def reset(self) -> np.array :
         super().reset(seed=12)
         self.state = self.gui.updated(None)
-        self.state_copy = self.state.copy()
         return self.state,{}
 
     def step(self,action):  
-        self.state_copy = self.gui.updated(action)
-        if self.rewardf.isSolvable() :
-            self.state = self.gui.updated(action)
-            self.state_copy = self.state
+        #true_value = False
+        #self.state = self.gui.updated(action,true_value)
+        x,y,value = action 
+        state_copy = self.state.copy()
+        state_copy[x][y] = value
+        sol = reward_function(state_copy,self.modif_cells).isSolvable()
+
+        if sol:
+            #
             reward = 10
-            self.modif_cells.remove(action[:2])
+            self.state[x][y] = value
+            if (x,y) in self.modif_cells:
+                self.modif_cells.remove(action[:2])
+            if self.render_mode == "human":
+                self.state = self.gui.updated(action,True)
         else :
             reward = -10
+            if self.render_mode == "human":
+                self.state = self.gui.updated(action,False)
+
         info = {}
         done = False
         return np.array(self.state),reward,False,done,info
@@ -241,14 +260,16 @@ class environment(gym.Env):
 
 if __name__=="__main__":
     t = gym.make("sudoku",render_mode="human")
-    t.reset()
-    
-    for r in range(100):
-        _,re,_,_,_ =  t.step((random.randint(0,8),random.randint(0,8),random.randint(1,9)))
+    st,_ = t.reset()
+    for n in range(5000):
+        t.step((random.randint(0,8),random.randint(0,8),random.randint(1,9)))
         t.render()
     
-
-
+    #easyBoard[0][0] = 4
+    #mod = modifiables(easyBoard)
+    #r = reward_function(easyBoard,mod).isSolvable()
+  
+    
 
 
 """
@@ -275,7 +296,7 @@ class Env:
                 torch.tensor([reward],dtype=torch.float),\
                 torch.tensor([done]),  \
                 torch.tensor([action]),\
-                conflicts
+                conflicts 
                 ]
            
     def rewardFunction(self,action:tuple|list,board:torch.Tensor):
@@ -302,13 +323,7 @@ class Env:
             reward = -((conflicts/2)*0.1 + 5)
         return reward,conflicts.floor()
 
-        
-
-
-
-
-
-            
+                    
 modifiableCells = modi(easyBoard)
 
 
