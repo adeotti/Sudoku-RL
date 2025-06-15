@@ -12,6 +12,7 @@ import gymnasium as gym
 import gymnasium.spaces as spaces
 from gymnasium.envs.registration import register
 
+
 easyBoard = easyBoard.to(int).numpy()
 
 class Gui(QWidget):
@@ -37,15 +38,19 @@ class Gui(QWidget):
                     self.cells[x][y].setText(number)
                     self.bl = (3 if (y%3 == 0 and y!= 0) else 0.5) # what is bl,bt ? 
                     self.bt = (3 if (x%3 == 0 and x!= 0) else 0.5)
+                    
                     self.color = ("transparent" if int(self.cells[x][y].text()) == 0 else "white")
-                    self.cellStyle = ["background-color:grey;"
+                   
+                    self.cellStyle = [
+                        "background-color:grey;"
                         f"border-left:{self.bl}px solid black;"
                         f"border-top: {self.bt}px solid black;"
                         "border-right: 1px solid black;"
                         "border-bottom: 1px solid black;"
                         f"color: {self.color};"
                         "font-weight: None;"
-                        "font-size: 20px"]
+                        "font-size: 20px"
+                    ]
                     self.cells[x][y].setStyleSheet("".join(self.cellStyle))
                     self.cells[x][y].setAlignment(QtCore.Qt.AlignCenter)
                     self.grid.addWidget(self.cells[x][y],x,y)
@@ -67,8 +72,8 @@ class Gui(QWidget):
             styleDict = {k.strip() : v.strip() for k,v in (element.split(":") for element in styleList)}
             cellColor = styleDict["color"]
 
-            if cellColor != "white":
-
+            if cellColor != "white" and cellColor != "gold":
+ 
                 self.cells[row][column].setText(str(value))
                 color = ("transparent" if not true_value else "gold")
                     
@@ -122,10 +127,11 @@ def modifiables(tensor) -> list:
                 modlist.append((i,y))
     return modlist
 
-@torch.no_grad()
+
+#### TODO : remove that pytorch layer and only use numpy
 def region(index:tuple|list,board: torch.Tensor | np.ndarray): 
-    if isinstance(board,np.ndarray):
-        board = torch.from_numpy(board)
+    if isinstance(board,np.ndarray): 
+        board = torch.from_numpy(board).detach().clone()
     # returns the region (row,column,block) of a cell
     x,y = index
     xlist = board[x].tolist()
@@ -149,8 +155,9 @@ def region(index:tuple|list,board: torch.Tensor | np.ndarray):
     return Region
 
 
+#### TODO : remove that pytorch layer and only use numpy
 class reward_function: # domain propagation
-    def __init__(self,state:torch.Tensor | None,modCells:list):
+    def __init__(self,state = None,modCells:list = None):
         self.board = torch.tensor(state).clone()
         self.solution = solution
         self.modCells = modCells
@@ -169,7 +176,6 @@ class reward_function: # domain propagation
             queu.append({element : self.domain(element)})
         return queu
     
-    @torch.no_grad()
     def isSolvable(self) -> bool: 
         if isinstance(self.board,(np.ndarray,torch.Tensor)):
             count = 0
@@ -199,75 +205,89 @@ if app is None:
 
 register( id="sudoku", entry_point="__main__:environment")
 
-class environment(gym.Env):  
+class environment(gym.Env): 
+
+    puzzle = easyBoard
     metadata = {"render_modes": ["human"]}   
-    def __init__(self,render_mode=None):
+
+    def __init__(self,render_mode = None):
         super().__init__()
         self.gui = Gui()
+
         self.action = None
+        self.trueaction = False
         self.action_space = spaces.Tuple(
             (
                 spaces.Discrete(9,None,0),
                 spaces.Discrete(9,None,0),
-                spaces.Discrete(9,None,1))
+                spaces.Discrete(9,None,1)
+            )
         )
         self.observation_space = spaces.Box(1,9,(9,9),dtype=float)
-        self.modif_cells = None
-        self.state : np.ndarray = np.zeros((9, 9), dtype=int) # init board
-        
-        self.timer = QTimer()
-        self.render_mode = render_mode
 
+        self.state = self.puzzle
         self.modif_cells : list = modifiables(easyBoard)
-        #self.rewardf = reward_function
         
-    def reset(self) -> np.array :
-        super().reset(seed=12)
-        self.state = self.gui.updated(None)
-        return self.state,{}
+        self.render_mode = render_mode
+        self.timer = QTimer()
+        
+    def reset(self,*kwargs) -> np.array :
+        super().reset(seed=None)
+        self.state = self.puzzle
+        return np.array(self.state),{}
 
     def step(self,action):  
-        #true_value = False
-        #self.state = self.gui.updated(action,true_value)
-        x,y,value = action 
+        self.action = action
+        x,y,value = self.action 
         state_copy = self.state.copy()
         state_copy[x][y] = value
-        sol = reward_function(state_copy,self.modif_cells).isSolvable()
+        solvable = reward_function(state_copy,self.modif_cells).isSolvable()
 
-        if sol:
-            #
+        if solvable:
             reward = 10
             self.state[x][y] = value
             if (x,y) in self.modif_cells:
                 self.modif_cells.remove(action[:2])
-            if self.render_mode == "human":
-                self.state = self.gui.updated(action,True)
-        else :
-            reward = -10
-            if self.render_mode == "human":
-                self.state = self.gui.updated(action,False)
+                self.trueaction = True
 
+        elif not solvable:
+            reward = -10
+            self.trueaction = False
+                
         info = {}
         done = False
         return np.array(self.state),reward,False,done,info
     
     def render(self):
         if self.render_mode == "human":
+            self.state = self.gui.updated(self.action,self.trueaction)
             self.gui.show()
             app.processEvents()
-            time.sleep(0.5)
+            time.sleep(0.2)
+        else : 
+            sys.exit("render_mode attribute should be set to \"human\"")
          
+    
+
+
+
+
+
+
+
 
 if __name__=="__main__":
-    t = gym.make("sudoku",render_mode="human")
+    t = gym.make("sudoku",render_mode = "human")
     st,_ = t.reset()
     for n in range(5000):
-        t.step((random.randint(0,8),random.randint(0,8),random.randint(1,9)))
+        s,r,_,_,_ = t.step((random.randint(0,8),random.randint(0,8),random.randint(1,9)))
+        print(r)
         t.render()
     
-    #easyBoard[0][0] = 4
-    #mod = modifiables(easyBoard)
-    #r = reward_function(easyBoard,mod).isSolvable()
+    """easyBoard[6][2] = 9
+    mod = modifiables(easyBoard)
+    r = reward_function(easyBoard,mod).isSolvable()
+    print(r)"""
   
     
 
