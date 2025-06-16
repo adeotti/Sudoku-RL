@@ -227,6 +227,7 @@ class environment(gym.Env):
 
         self.state = self.puzzle
         self.modif_cells : list = modifiables(easyBoard)
+        self.rewardfn = reward_function
         
         self.render_mode = render_mode
         self.timer = QTimer()
@@ -239,9 +240,8 @@ class environment(gym.Env):
     def step(self,action):  
         self.action = action
         x,y,value = self.action 
-        state_copy = self.state.copy()
-        state_copy[x][y] = value
-        solvable = reward_function(state_copy,self.modif_cells).isSolvable()
+        self.state[x][y] = value
+        solvable = self.rewardfn(self.state,self.modif_cells).isSolvable()
 
         if solvable:
             reward = 10
@@ -267,28 +267,19 @@ class environment(gym.Env):
         else : 
             sys.exit("render_mode attribute should be set to \"human\"")
          
-    
-
-
-
-
-
-
-
 
 if __name__=="__main__":
-    t = gym.make("sudoku",render_mode = "human")
+    """t = gym.make("sudoku")
     st,_ = t.reset()
-    for n in range(5000):
-        s,r,_,_,_ = t.step((random.randint(0,8),random.randint(0,8),random.randint(1,9)))
-        print(r)
-        t.render()
+    s,r,_,_,_ = t.step((6,2,9))
+    print(r)"""
+        
     
-    """easyBoard[6][2] = 9
+    easyBoard[6][2] = 9
     mod = modifiables(easyBoard)
     r = reward_function(easyBoard,mod).isSolvable()
-    print(r)"""
-  
+    print(r)
+
     
 
 
