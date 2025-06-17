@@ -4,7 +4,6 @@ import unittest
 import gymnasium as gym 
 
 
-
 class Test(unittest.TestCase):
 
     env = gym.make("sudoku")

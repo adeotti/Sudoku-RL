@@ -269,11 +269,6 @@ class environment(gym.Env):
          
 
 if __name__=="__main__":
-    """t = gym.make("sudoku")
-    st,_ = t.reset()
-    s,r,_,_,_ = t.step((6,2,9))
-    print(r)"""
-        
     
     easyBoard[6][2] = 9
     mod = modifiables(easyBoard)
@@ -281,8 +276,6 @@ if __name__=="__main__":
     print(r)
 
     
-
-
 """
 class Env:
     def __init__(self):
@@ -311,11 +304,6 @@ class Env:
                 ]
            
     def rewardFunction(self,action:tuple|list,board:torch.Tensor):
-        """"""
-        This will call the solver method to check if the board is solvable after a cell is filled.
-        This fill a copy of the given board so the result here does not affect the original state
-        if the board is solvable then the index of the value (x,y) is removed from the list of modifiables cells
-        """"""
         reward = 0
         x,y,value = action
         board = board.clone() 
