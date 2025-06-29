@@ -5,7 +5,7 @@ from collections import deque
 class arc_3:
     def __init__(self,board : list):
         self.board = board
-        self.matrix = self.matrix_domain(self.board)  # work with this matrixxxx
+        self.matrix = self.matrix_domain(self.board)  # work with this matrix
         self.regions = self.get_regions(self.matrix)
         self.colums = self.get_colums(self.matrix)
     
