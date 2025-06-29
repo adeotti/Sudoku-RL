@@ -1,16 +1,15 @@
 from puzzle import easyBoard
-import torch,sys
 from collections import deque
 
 class arc_3:
     def __init__(self,board : list):
         self.board = board
         self.matrix = self.matrix_domain(self.board)  # work with this matrix
-        self.regions = self.get_regions(self.matrix)
         self.colums = self.get_colums(self.matrix)
+        self.regions = self.get_regions(self.matrix)
+        
     
     def matrix_domain(self,board : list[list[int]]) -> list[list[object]]:
-
         class node:
             def __init__(self):
                 self.value : int = 0
@@ -50,15 +49,37 @@ class arc_3:
                 regions.append(region)
         return regions
         
-    def arcs_definition(self):
-        pass
+    def arcs_definition(self,matrix : list[list[object]]):
+        arcs = set()
+        for line in matrix:
+            for i in range(len(line)):
+                for j in range(len(line)):
+                    if i != j :
+                        xi = line[i].indice
+                        xj = line[j].indice
+                        arcs.add((xi, xj))
+        return arcs
     
+    def create_arcs(self):
+        arcs_row = self.arcs_definition(self.matrix)
+        arcs_col = self.arcs_definition(self.colums)
+        arcs_regions = self.arcs_definition(self.regions)
+        return arcs_row,arcs_col,arcs_regions
+    
+    def arcs_merger(self):
+        arcs_x,arcs_y,arcs_regions = self.create_arcs()
+        assert len(arcs_x) == len(arcs_y) == len(arcs_regions) == 648
+        final_arcs = arcs_x | arcs_y | arcs_regions
+        return len(final_arcs)
+    
+    def run(self):
+        pass
         
         
+t = arc_3(easyBoard)
+x = t.arcs_merger()
+print(x)
+        
 
-
-easyBoard = easyBoard.to(torch.int16).tolist()
-
-s = arc_3(easyBoard)
-print(s.matrix[8][0].indice)
+ 
  
