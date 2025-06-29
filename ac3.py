@@ -56,6 +56,7 @@ class arc_3:
         
         
 
+
 easyBoard = easyBoard.to(torch.int16).tolist()
 
 s = arc_3(easyBoard)
