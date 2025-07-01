@@ -1,6 +1,13 @@
 from puzzle import easyBoard
 from collections import deque
 
+
+class node:
+    def __init__(self):
+        self.value : int = 0
+        self.indice : tuple = None
+        self.domain = list(range(1,10))
+
 class arc_3:
     def __init__(self,board : list):
         self.board = board
@@ -8,14 +15,7 @@ class arc_3:
         self.colums = self.get_colums(self.matrix)
         self.regions = self.get_regions(self.matrix)
         
-    
     def matrix_domain(self,board : list[list[int]]) -> list[list[object]]:
-        class node:
-            def __init__(self):
-                self.value : int = 0
-                self.indice : tuple = None
-                self.domain = list(range(1,10))
-                
         matrix1 = [[node() for _ in range(9)] for _ in range(9)]
         matrix2 = board
         for x1,x2 in zip(matrix1,matrix2):
@@ -49,15 +49,13 @@ class arc_3:
                 regions.append(region)
         return regions
         
-    def arcs_definition(self,matrix : list[list[object]]):
+    def arcs_definition(self,matrix : list[list[node]]):
         arcs = set()
         for line in matrix:
             for i in range(len(line)):
                 for j in range(len(line)):
                     if i != j :
-                        xi = line[i].indice
-                        xj = line[j].indice
-                        arcs.add((xi, xj))
+                        arcs.add((line[i], line[j]))
         return arcs
     
     def create_arcs(self):
@@ -70,15 +68,23 @@ class arc_3:
         arcs_x,arcs_y,arcs_regions = self.create_arcs()
         assert len(arcs_x) == len(arcs_y) == len(arcs_regions) == 648
         final_arcs = arcs_x | arcs_y | arcs_regions
-        return len(final_arcs)
+        return final_arcs
     
-    def run(self):
-        pass
+    def revise(self):
+        arcs = self.arcs_merger()
+     
+            
+                
+
+             
+
+       
+        
         
         
 t = arc_3(easyBoard)
-x = t.arcs_merger()
-print(x)
+print(t.revise())
+ 
         
 
  

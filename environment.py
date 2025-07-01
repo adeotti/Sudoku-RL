@@ -270,60 +270,11 @@ class environment(gym.Env):
 
 if __name__=="__main__":
     
-    easyBoard[6][2] = 9
-    mod = modifiables(easyBoard)
-    r = reward_function(easyBoard,mod).isSolvable()
-    print(r)
+    env = gym.make("sudoku",render_mode = "human")
+    env.reset()
 
-    
-"""
-class Env:
-    def __init__(self):
-        self.modifiableCells = modifiableCells.copy()
-        self.solution = solution
-        self.state = easyBoard.clone()
-    
-    def reset(self):
-        self.state  = easyBoard.clone()
-        self.modifiableCells = modifiableCells.copy()
+    for n in range(10000):
+        env.step(env.action_space.sample())
+        env.render()
 
-    def step(self,action : tuple|list):#,state:torch.Tensor):
-        self.action = action
-        x,y,value = self.action
-        reward,conflicts = self.rewardFunction(action,self.state)
-        if reward > 0:
-            self.state[x][y] = value
-            self.modifiableCells.remove((x,y))
-        done = torch.equal(solution,self.state)  
-        return [
-                self.state, \
-                torch.tensor([reward],dtype=torch.float),\
-                torch.tensor([done]),  \
-                torch.tensor([action]),\
-                conflicts 
-                ]
-           
-    def rewardFunction(self,action:tuple|list,board:torch.Tensor):
-        reward = 0
-        x,y,value = action
-        board = board.clone() 
-        copyList = self.modifiableCells.copy()
-        if not (x,y) in copyList:
-            diff = (board == self.solution) 
-            conflicts = (diff == False).sum().item() 
-            return 0,conflicts
-        board[x][y] = value
-        conflicts = ((board == self.solution) == False).sum().to(float) 
-        copyList.remove((x,y)) # remove (x,y) before passing it to Solver
-        Solver = solver(board.clone(),copyList)
-        if Solver.isSolvable():
-            reward = (conflicts/2)*0.1 + 5 
-        else:
-            reward = -((conflicts/2)*0.1 + 5)
-        return reward,conflicts.floor()
-
-                    
-modifiableCells = modi(easyBoard)
-
-
-"""
+   
