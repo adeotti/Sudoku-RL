@@ -1,12 +1,12 @@
 from puzzle import easyBoard
 from collections import deque
 
-
 class node:
     def __init__(self):
         self.value : int = 0
         self.indice : tuple = None
         self.domain = list(range(1,10))
+        self.region : int = None
 
 class arc_3:
     def __init__(self,board : list):
@@ -14,8 +14,9 @@ class arc_3:
         self.matrix = self.matrix_domain(self.board)  # work with this matrix
         self.colums = self.get_colums(self.matrix)
         self.regions = self.get_regions(self.matrix)
-        
-    def matrix_domain(self,board : list[list[int]]) -> list[list[object]]:
+        arcs = self.arcs_merger()
+       
+    def matrix_domain(self,board : list[list[int]]) -> list[list[node]]:
         matrix1 = [[node() for _ in range(9)] for _ in range(9)]
         matrix2 = board
         for x1,x2 in zip(matrix1,matrix2):
@@ -24,9 +25,11 @@ class arc_3:
                     nod.value = value
                     nod.domain.remove(value)
         
-        for x in range(9): # index attributes
+        for x in range(9): # index and region attributes
             for y in range(9):
                 matrix1[x][y].indice = (x,y)
+                matrix1[x][y].region = self.get_region_id(*(x,y))
+
         return matrix1
     
     def get_colums(self,board) -> list[list[int]]:
@@ -48,6 +51,9 @@ class arc_3:
                         region.append(board[block_row + x][block_col + y])
                 regions.append(region)
         return regions
+    
+    def get_region_id(self,x,y):
+        return  (x // 3) * 3 + (y // 3)
         
     def arcs_definition(self,matrix : list[list[node]]):
         arcs = set()
@@ -70,22 +76,37 @@ class arc_3:
         final_arcs = arcs_x | arcs_y | arcs_regions
         return final_arcs
     
-    def revise(self):
-        arcs = self.arcs_merger()
-     
-            
-                
-
-             
+    def revise(self,node1:node,node2:node):
+        revised = False
+        for x in node1.domain.copy():
+            if not any(x!=y for y in node2.domain):
+                node1.domain.remove(x)
+                revised = True
+        return revised
+    
+    def main(self):
+        matrix = self.matrix
+        new_matrix = []
+        queue = deque(self.arcs_merger())
+        while queue:
+            node1,node2 = deque.popleft()
+            if self.revise(node1,node2):
+                pass
 
        
-        
-        
-        
-t = arc_3(easyBoard)
-print(t.revise())
+
+
+
+
+
+solver = arc_3(easyBoard)
+print(solver.matrix[0][0].domain)
+print(solver.matrix[4][5].region)
+print(solver.matrix[2][7].value)
+print(solver.matrix[8][8].indice)
+
  
-        
+
 
  
  
