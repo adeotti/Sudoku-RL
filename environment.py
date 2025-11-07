@@ -11,8 +11,8 @@ from puzzle import easyBoard,solution
 import gymnasium as gym
 import gymnasium.spaces as spaces
 from gymnasium.envs.registration import register
-
-
+ 
+import PySide6
 easyBoard = easyBoard.to(int).numpy()
 
 class Gui(QWidget):
@@ -24,7 +24,7 @@ class Gui(QWidget):
         self.game = easyBoard
         self.grid = QGridLayout(self)
         self.grid.setSpacing(0)
-        self.size = 9 
+        self.size = 9
         self.cells = [
             [QLineEdit(self) for _ in range(self.size)] for _ in range (self.size)
         ]
@@ -199,14 +199,15 @@ class reward_function: # domain propagation
             else:
                 return False
 
+
 app = QApplication.instance()
 if app is None:
     app = QApplication([])
 
 register( id="sudoku", entry_point="__main__:environment")
 
-class environment(gym.Env): 
 
+class environment(gym.Env): 
     puzzle = easyBoard
     metadata = {"render_modes": ["human"]}   
 
@@ -228,12 +229,11 @@ class environment(gym.Env):
         self.state = self.puzzle
         self.modif_cells : list = modifiables(easyBoard)
         self.rewardfn = reward_function
-        
-        self.render_mode = render_mode
         self.timer = QTimer()
+        self.render_mode = render_mode
         
-    def reset(self,*kwargs) -> np.array :
-        super().reset(seed=None)
+    def reset(self,seed=None, options=None) -> np.array :
+        super().reset(seed=seed)
         self.state = self.puzzle
         return np.array(self.state),{}
 
@@ -253,28 +253,29 @@ class environment(gym.Env):
         elif not solvable:
             reward = -10
             self.trueaction = False
-                
+
         info = {}
         done = False
         return np.array(self.state),reward,False,done,info
-    
+
+
     def render(self):
         if self.render_mode == "human":
             self.state = self.gui.updated(self.action,self.trueaction)
             self.gui.show()
             app.processEvents()
-            time.sleep(0.2)
-        else : 
+            time.sleep(0.0)
+        else :
             sys.exit("render_mode attribute should be set to \"human\"")
-         
 
 if __name__=="__main__":
-    
     env = gym.make("sudoku",render_mode = "human")
     env.reset()
-
+    
     for n in range(10000):
         env.step(env.action_space.sample())
         env.render()
 
-   
+
+
+
