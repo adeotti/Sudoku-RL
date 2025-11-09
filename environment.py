@@ -72,15 +72,16 @@ class Gui(QWidget):
             styleDict = {k.strip() : v.strip() for k,v in (element.split(":") for element in styleList)}
             cellColor = styleDict["color"]
 
-            if cellColor != "white" and cellColor != "gold":
+            if cellColor != "white" and cellColor != "black":
  
                 self.cells[row][column].setText(str(value))
-                color = ("transparent" if not true_value else "gold")
+                color = ("transparent" if not true_value else "black")
+                #background = "dark grey" if color == "gold" else "red"
                     
                 ubl = (3 if (column % 3 == 0 and column!= 0) else 0.5)
                 ubt = (3 if (row % 3 == 0 and row!= 0) else 0.5)
                 updatedStyle = [
-                    "background-color: dark grey;"
+                    "background-color:dark grey;"
                     f"border-left:{ubl}px solid black;"
                     f"border-top: {ubt}px solid black;"
                     "border-right: 1px solid black;"
@@ -92,8 +93,9 @@ class Gui(QWidget):
                 self.cells[row][column].setStyleSheet("".join(updatedStyle)) # Update the cell color flash
 
                 def reset_style():
+                    background = "orange" if color == "black" else "grey"
                     normalStyle = [
-                        "background-color: grey;",
+                        f"background-color:{background};",
                         f"border-left:{ubl}px solid black;",
                         f"border-top: {ubt}px solid black;",
                         "border-right: 1px solid black;",
@@ -127,7 +129,6 @@ def modifiables(tensor) -> list:
                 modlist.append((i,y))
     return modlist
 
-
 #### TODO : remove that pytorch layer and only use numpy
 def region(index:tuple|list,board: torch.Tensor | np.ndarray): 
     if isinstance(board,np.ndarray): 
@@ -155,7 +156,6 @@ def region(index:tuple|list,board: torch.Tensor | np.ndarray):
     return Region
 
 
-#### TODO : remove that pytorch layer and only use numpy
 class reward_function: # domain propagation
     def __init__(self,state = None,modCells:list = None):
         self.board = torch.tensor(state).clone()
@@ -198,6 +198,7 @@ class reward_function: # domain propagation
                 return True
             else:
                 return False
+
 
 
 app = QApplication.instance()
@@ -271,11 +272,10 @@ class environment(gym.Env):
 if __name__=="__main__":
     env = gym.make("sudoku",render_mode = "human")
     env.reset()
-    
-    for n in range(10000):
+   
+    for n in range(100):
         env.step(env.action_space.sample())
         env.render()
-
 
 
 
