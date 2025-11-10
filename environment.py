@@ -132,15 +132,14 @@ def modifiables(tensor) -> list: # returns modifiables cells index of a board an
 
 class reward_cls: 
     def __init__(self,board:Tensor,action:list):
-        self.board = board.clone()
+        self.board = torch.tensor(board).clone()
         self.action = action
         self.x,self.y,self.target = self.action
         self.n = int(torch.tensor(9).sqrt())
         self.reward = 0
         self.non_modifiables = torch.nonzero(self.board)
-        print(self.reward_fn())
-        
-    def region_fn(self,index:list,board:Tensor,xlist,ylist): # returns the region (row ∩ column ∩ block) of a cells  
+               
+    def region_fn(self,index:list,board:Tensor,xlist,ylist): # returns the region (row ∪ column ∪ block) of a cells  
         x,y = index
         ix,iy = (x//self.n)* self.n , (y//self.n)* self.n
         block = torch.flatten(board[ix:ix+self.n , iy:iy+self.n])
@@ -153,7 +152,7 @@ class reward_cls:
     def reward_fn(self):
         if torch.all(self.non_modifiables == torch.tensor([self.x,self.y]),dim=1).any():
             return 0
-        print("here")
+        
         xlist = self.board[self.x]
         xlist = torch.cat((xlist[:self.y],xlist[self.y+1:]))
         ylist = self.board[:,self.y]
@@ -196,7 +195,7 @@ class environment(gym.Env):
 
         self.state = self.puzzle
         self.modif_cells : list = modifiables(easyBoard)
-        self.rewardfn = reward_function
+        self.rewardfn = reward_cls
         self.timer = QTimer()
         self.render_mode = render_mode
         
@@ -209,17 +208,12 @@ class environment(gym.Env):
         self.action = action
         x,y,value = self.action 
         self.state[x][y] = value
-        solvable = self.rewardfn(self.state,self.modif_cells).isSolvable()
-
-        if solvable:
-            reward = 10
+        reward = self.rewardfn(self.state,action).reward_fn()
+        if reward > 0:
             self.state[x][y] = value
-            if (x,y) in self.modif_cells:
-                self.modif_cells.remove(action[:2])
-                self.trueaction = True
-
-        elif not solvable:
-            reward = -10
+            self.modif_cells.remove(action[:2])
+            self.trueaction = True
+        else:
             self.trueaction = False
 
         info = {}
@@ -232,7 +226,7 @@ class environment(gym.Env):
             self.state = self.gui.updated(self.action,self.trueaction)
             self.gui.show()
             app.processEvents()
-            time.sleep(0.0)
+            time.sleep(0.2)
         else :
             sys.exit("render_mode attribute should be set to \"human\"")
 
@@ -240,8 +234,9 @@ if __name__=="__main__":
     env = gym.make("sudoku",render_mode = "human")
     env.reset()
    
-    for n in range(100):
-        env.step(env.action_space.sample())
+    for n in range(1000):
+        action = env.action_space.sample() 
+        env.step(action)
         env.render()
 
 
