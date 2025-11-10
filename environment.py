@@ -1,5 +1,6 @@
 from puzzle import easyBoard,solution
 import torch,random,time,math,sys
+from torch import Tensor
 import numpy as np
 
 from PySide6 import QtCore,QtGui
@@ -11,8 +12,9 @@ from puzzle import easyBoard,solution
 import gymnasium as gym
 import gymnasium.spaces as spaces
 from gymnasium.envs.registration import register
- 
+
 import PySide6
+
 easyBoard = easyBoard.to(int).numpy()
 
 class Gui(QWidget):
@@ -25,9 +27,7 @@ class Gui(QWidget):
         self.grid = QGridLayout(self)
         self.grid.setSpacing(0)
         self.size = 9
-        self.cells = [
-            [QLineEdit(self) for _ in range(self.size)] for _ in range (self.size)
-        ]
+        self.cells = [[QLineEdit(self) for _ in range(self.size)] for _ in range (self.size)]
         # layout for cells 
         for line in self.game :
             for x in range(self.size):
@@ -120,8 +120,8 @@ class Gui(QWidget):
         matrix = np.array([list_text],dtype=float).reshape(9,9)
         return matrix
 
-def modifiables(tensor) -> list: 
-    # returns modifiables cells index of a board and a mask
+
+def modifiables(tensor) -> list: # returns modifiables cells index of a board and a mask
     modlist = []
     for i,x in enumerate(tensor):
         for y in range(9): 
@@ -129,75 +129,49 @@ def modifiables(tensor) -> list:
                 modlist.append((i,y))
     return modlist
 
-#### TODO : remove that pytorch layer and only use numpy
-def region(index:tuple|list,board: torch.Tensor | np.ndarray): 
-    if isinstance(board,np.ndarray): 
-        board = torch.from_numpy(board).detach().clone()
-    # returns the region (row,column,block) of a cell
-    x,y = index
-    xlist = board[x].tolist()
-    xlist.pop(y)
 
-    ylist = [element[y].tolist() for element in board]
-    ylist.pop(x)
+class reward_fn: 
+    def __init__(self,board:Tensor,action:list):
+        self.board = board.clone()
+        self.action = action
+        x,y,_ = self.action
+        self.n = int(torch.tensor(9).sqrt())
+        
+        xlist = board[x]
+        self.xlist = torch.cat((xlist[:y],xlist[y+1:]))
+        
+        ylist = board[:,y]
+        self.ylist = torch.cat((ylist[:x],ylist[x+1:]))
+        
+        self.region = self.region_fn((x,y), self.board) 
+        
+        self.conf = (self.board == 0).sum().tolist()   
+        
 
-    #block
-    n = int(math.sqrt(9))
-    ix,iy = (x//n)* n , (y//n)* n
-    block = torch.flatten(board[ix:ix+n , iy:iy+n]).tolist()
-    local_row = x - ix
-    local_col = y - iy
-    action_index = local_row * n + local_col
-    block_ = [num for idx, num in enumerate(block) if idx != action_index]
-
-    #output
-    Region = [xlist,ylist,block_]
-    Region = [item for sublist in Region for item in sublist]
-    return Region
-
-
-class reward_function: # domain propagation
-    def __init__(self,state = None,modCells:list = None):
-        self.board = torch.tensor(state).clone()
-        self.solution = solution
-        self.modCells = modCells
-        self.maxStep = len(modCells)*3
-         
-    def domain(self,idx:tuple|list) -> list :
-        Region = region(idx,self.board )
-        Region = set([item for item in Region if item != 0]) 
-        domain_ = set(range(1,10)) 
-        TrueDomain = list(domain_ - Region)
-        return TrueDomain
+    def region_fn(self,index:list,board:Tensor): # returns the region (row ∩ column ∩ block) of a cells  
+        x,y = index
+        ix,iy = (x//self.n)* self.n , (y//self.n)* self.n
+        block = torch.flatten(board[ix:ix+self.n , iy:iy+self.n])
+        local_row = x - ix
+        local_col = y - iy
+        action_index = local_row * self.n + local_col
+        block_ = torch.cat([block[:action_index], block[action_index+1:]])
+        
+        Region = torch.cat([self.xlist,self.ylist,block_])
+        return Region
     
-    def collector(self):
-        queu = []
-        for element in self.modCells:
-            queu.append({element : self.domain(element)})
-        return queu
-    
-    def isSolvable(self) -> bool: 
-        if isinstance(self.board,(np.ndarray,torch.Tensor)):
-            count = 0
-            while True:
-                self.__init__(self.board,self.modCells)
-                data = self.collector()
-                for dictt in data:
-                    for k,v in dictt.items():
-                        if len(v) == 1:
-                            self.board[k] = v[0]
-                count+=1
-                if len(data) == 0:
-                    break
-                else:
-                    if count > self.maxStep:
-                        break
-            diff = (self.board == solution)
-            diff = (diff == True).sum().item()
-            if diff == solution.numel(): # if all True cells = 81 :
-                return True
-            else:
-                return False
+    def unique(self):
+        pass
+
+
+    def reward(self):
+        pass
+
+
+#t = reward_fn(torch.from_numpy(easyBoard),(0,0,1))
+#sys.exit()
+
+
 
 
 
