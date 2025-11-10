@@ -130,50 +130,43 @@ def modifiables(tensor) -> list: # returns modifiables cells index of a board an
     return modlist
 
 
-class reward_fn: 
+class reward_cls: 
     def __init__(self,board:Tensor,action:list):
         self.board = board.clone()
         self.action = action
-        x,y,_ = self.action
+        self.x,self.y,self.target = self.action
         self.n = int(torch.tensor(9).sqrt())
+        self.reward = 0
+        self.non_modifiables = torch.nonzero(self.board)
+        print(self.reward_fn())
         
-        xlist = board[x]
-        self.xlist = torch.cat((xlist[:y],xlist[y+1:]))
-        
-        ylist = board[:,y]
-        self.ylist = torch.cat((ylist[:x],ylist[x+1:]))
-        
-        self.region = self.region_fn((x,y), self.board) 
-        
-        self.conf = (self.board == 0).sum().tolist()   
-        
-
-    def region_fn(self,index:list,board:Tensor): # returns the region (row ∩ column ∩ block) of a cells  
+    def region_fn(self,index:list,board:Tensor,xlist,ylist): # returns the region (row ∩ column ∩ block) of a cells  
         x,y = index
         ix,iy = (x//self.n)* self.n , (y//self.n)* self.n
         block = torch.flatten(board[ix:ix+self.n , iy:iy+self.n])
         local_row = x - ix
         local_col = y - iy
         action_index = local_row * self.n + local_col
-        block_ = torch.cat([block[:action_index], block[action_index+1:]])
-        
-        Region = torch.cat([self.xlist,self.ylist,block_])
-        return Region
+        block_ = torch.cat([block[:action_index], block[action_index+1:]]) 
+        return   torch.cat([xlist,ylist,block_])  # Region[Region!=0] to filter zeros out
     
-    def unique(self):
-        pass
-
-
-    def reward(self):
-        pass
-
-
-#t = reward_fn(torch.from_numpy(easyBoard),(0,0,1))
-#sys.exit()
-
-
-
-
+    def reward_fn(self):
+        if torch.all(self.non_modifiables == torch.tensor([self.x,self.y]),dim=1).any():
+            return 0
+        print("here")
+        xlist = self.board[self.x]
+        xlist = torch.cat((xlist[:self.y],xlist[self.y+1:]))
+        ylist = self.board[:,self.y]
+        ylist = torch.cat((ylist[:self.x],ylist[self.x+1:]))
+        self.region = self.region_fn((self.x,self.y), self.board,xlist,ylist)   
+        self.conflicts = (self.board == 0).sum().tolist()  
+        self.unique = not torch.any(self.region==self.target).item()
+        if self.unique:
+            self.reward = 1 + (self.conflicts*0.1)
+        else:
+            self.reward = - (1 + self.conflicts*0.1)
+        return round(self.reward,2)
+            
 
 app = QApplication.instance()
 if app is None:
