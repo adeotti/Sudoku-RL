@@ -114,13 +114,15 @@ class Gui(QWidget):
         matrix = np.array([list_text],dtype=float).reshape(9,9)
         return matrix
 
+
 #@torch.compile(mode="reduce-overhead",fullgraph=True)
 def region_fn(index:list,board:Tensor): # returns the region (row ∪ column ∪ block) of a cells 
+    board = torch.tensor(board)
     x,y = index
 
-    xlist = self.board[x]
+    xlist = board[x]
     xlist = torch.cat((xlist[:y],xlist[y+1:]))
-    ylist = self.board[:,y]
+    ylist = board[:,y]
     ylist = torch.cat((ylist[:x],ylist[x+1:]))
     
     n = int(torch.tensor(9).sqrt())
@@ -128,7 +130,7 @@ def region_fn(index:list,board:Tensor): # returns the region (row ∪ column ∪
     block = torch.flatten(board[ix:ix+n , iy:iy+n])
     local_row = x - ix
     local_col = y - iy
-    action_index = local_row * self.n + local_col
+    action_index = local_row * n + local_col
     block_ = torch.cat([block[:action_index], block[action_index+1:]]) 
     return   torch.cat([xlist,ylist,block_])
 
@@ -144,8 +146,7 @@ class reward_cls:
                            
     def reward_fn(self):
         if self.mask[self.x,self.y]:
-            return 0.0
-        #self.region = region_fn((self.x,self.y), self.board) # region comp 1   
+            return 0.0 
         self.conflicts = (self.board == 0).sum().tolist()  
         self.unique = not torch.any(self.region==self.target).item()
         if self.unique:
@@ -186,7 +187,8 @@ class environment(gym.Env):
 
         self.state = self.puzzle
         self.clone = self.state.copy()
-        self.modif_cells : list = modifiables(easyBoard)
+        self.modif_cells = torch.nonzero(torch.tensor(self.state)).tolist()
+        
         self.region = region_fn
         self.constrain_prop = constrain_propagation
         self.rewardfn = reward_cls 
@@ -206,9 +208,9 @@ class environment(gym.Env):
         reward = self.rewardfn(self.state,action,region).reward_fn()
         constrain = self.constrain_prop(region)
      
-        if reward > 0:
+        if reward > 0 and not (x,y) in self.modif_cells:
             self.state[x][y] = value
-            self.modif_cells.remove(action[:2])
+            self.modif_cells.append((x,y))
             self.true_action = True
             self.clone = self.state
         else:
