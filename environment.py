@@ -27,8 +27,7 @@ class Gui(QWidget):
         self.grid = QGridLayout(self)
         self.grid.setSpacing(0)
         self.size = 9
-        self.cells = [[QLineEdit(self) for _ in range(self.size)] for _ in range (self.size)]
-        # layout for cells 
+        self.cells = [[QLineEdit(self) for _ in range(self.size)] for _ in range (self.size)] 
         for line in self.game :
             for x in range(self.size):
                 for y in range(self.size):
@@ -38,9 +37,7 @@ class Gui(QWidget):
                     self.cells[x][y].setText(number)
                     self.bl = (3 if (y%3 == 0 and y!= 0) else 0.5) # what is bl,bt ? 
                     self.bt = (3 if (x%3 == 0 and x!= 0) else 0.5)
-                    
                     self.color = ("transparent" if int(self.cells[x][y].text()) == 0 else "white")
-                   
                     self.cellStyle = [
                         "background-color:grey;"
                         f"border-left:{self.bl}px solid black;"
@@ -73,11 +70,8 @@ class Gui(QWidget):
             cellColor = styleDict["color"]
 
             if cellColor != "white" and cellColor != "black":
- 
                 self.cells[row][column].setText(str(value))
                 color = ("transparent" if not true_value else "black")
-                #background = "dark grey" if color == "gold" else "red"
-                    
                 ubl = (3 if (column % 3 == 0 and column!= 0) else 0.5)
                 ubt = (3 if (row % 3 == 0 and row!= 0) else 0.5)
                 updatedStyle = [
@@ -120,36 +114,38 @@ class Gui(QWidget):
         matrix = np.array([list_text],dtype=float).reshape(9,9)
         return matrix
 
+#@torch.compile(mode="reduce-overhead",fullgraph=True)
+def region_fn(index:list,board:Tensor): # returns the region (row ∪ column ∪ block) of a cells 
+    x,y = index
+
+    xlist = self.board[x]
+    xlist = torch.cat((xlist[:y],xlist[y+1:]))
+    ylist = self.board[:,y]
+    ylist = torch.cat((ylist[:x],ylist[x+1:]))
+    
+    n = int(torch.tensor(9).sqrt())
+    ix,iy = (x//n)* n , (y//n)* n
+    block = torch.flatten(board[ix:ix+n , iy:iy+n])
+    local_row = x - ix
+    local_col = y - iy
+    action_index = local_row * self.n + local_col
+    block_ = torch.cat([block[:action_index], block[action_index+1:]]) 
+    return   torch.cat([xlist,ylist,block_])
+
 
 class reward_cls: 
-    def __init__(self,board:Tensor,action:list):
+    def __init__(self,board:Tensor,action:list,region):
         self.board = torch.tensor(board).clone()
         self.action = action
         self.x,self.y,self.target = self.action
-        self.n = int(torch.tensor(9).sqrt())
         self.reward = 0
         self.mask = (self.board!=0)
-                       
-    def region_fn(self,index:list,board:Tensor,xlist,ylist): # returns the region (row ∪ column ∪ block) of a cells  
-        x,y = index
-        ix,iy = (x//self.n)* self.n , (y//self.n)* self.n
-        block = torch.flatten(board[ix:ix+self.n , iy:iy+self.n])
-        local_row = x - ix
-        local_col = y - iy
-        action_index = local_row * self.n + local_col
-        block_ = torch.cat([block[:action_index], block[action_index+1:]]) 
-        return   torch.cat([xlist,ylist,block_])  # Region[Region!=0] to filter zeros out
-     
-    @torch.no_grad()
+        self.region = region
+                           
     def reward_fn(self):
         if self.mask[self.x,self.y]:
-            return 0
-        
-        xlist = self.board[self.x]
-        xlist = torch.cat((xlist[:self.y],xlist[self.y+1:]))
-        ylist = self.board[:,self.y]
-        ylist = torch.cat((ylist[:self.x],ylist[self.x+1:]))
-        self.region = self.region_fn((self.x,self.y), self.board,xlist,ylist)   
+            return 0.0
+        #self.region = region_fn((self.x,self.y), self.board) # region comp 1   
         self.conflicts = (self.board == 0).sum().tolist()  
         self.unique = not torch.any(self.region==self.target).item()
         if self.unique:
@@ -160,8 +156,8 @@ class reward_cls:
            
 
 class constrain_propagation: # one step constrain propagation 
-    def __init__(self):
-        pass
+    def __init__(self,region):
+        self.region = region
 
 
 app = QApplication.instance()
@@ -174,7 +170,6 @@ register( id="sudoku", entry_point="__main__:environment")
 class environment(gym.Env): 
     puzzle = easyBoard
     metadata = {"render_modes": ["human"],"render_fps":4}   
-
     def __init__(self,render_mode = None):
         super().__init__()
         self.gui = Gui()
@@ -192,6 +187,8 @@ class environment(gym.Env):
         self.state = self.puzzle
         self.clone = self.state.copy()
         self.modif_cells : list = modifiables(easyBoard)
+        self.region = region_fn
+        self.constrain_prop = constrain_propagation
         self.rewardfn = reward_cls 
         self.render_mode = render_mode
                 
@@ -204,7 +201,10 @@ class environment(gym.Env):
         self.action = action
         x,y,value = self.action 
         self.clone[x][y] = value
-        reward = self.rewardfn(self.state,action).reward_fn()
+        region = self.region((x,y),self.clone)
+
+        reward = self.rewardfn(self.state,action,region).reward_fn()
+        constrain = self.constrain_prop(region)
      
         if reward > 0:
             self.state[x][y] = value
@@ -213,7 +213,6 @@ class environment(gym.Env):
             self.clone = self.state
         else:
             self.true_action = False
-
         info = {}
         done = False
         truncated = False
