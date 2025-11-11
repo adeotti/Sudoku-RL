@@ -157,7 +157,12 @@ class reward_cls:
         else:
             self.reward = - (1 + self.conflicts*0.1)
         return round(self.reward,2)
-            
+           
+
+class constrain_propagation: # one step constrain propagation 
+    def __init__(self):
+        pass
+
 
 app = QApplication.instance()
 if app is None:
