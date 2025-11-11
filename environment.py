@@ -176,49 +176,51 @@ register( id="sudoku", entry_point="__main__:environment")
 
 class environment(gym.Env): 
     puzzle = easyBoard
-    metadata = {"render_modes": ["human"]}   
+    metadata = {"render_modes": ["human"],"render_fps":4}   
 
     def __init__(self,render_mode = None):
         super().__init__()
         self.gui = Gui()
 
         self.action = None
-        self.trueaction = False
+        self.true_action = False
         self.action_space = spaces.Tuple(
             (
-                spaces.Discrete(9,None,0),
-                spaces.Discrete(9,None,0),
-                spaces.Discrete(9,None,1)
+            spaces.Discrete(9,None,0),
+            spaces.Discrete(9,None,0),
+            spaces.Discrete(9,None,1)
             )
         )
-        self.observation_space = spaces.Box(1,9,(9,9),dtype=float)
+        self.observation_space = spaces.Box(0,9,(9,9),dtype=np.int32)
 
         self.state = self.puzzle
         self.modif_cells : list = modifiables(easyBoard)
         self.rewardfn = reward_cls
         self.timer = QTimer()
         self.render_mode = render_mode
-        
+                
     def reset(self,seed=None, options=None) -> np.array :
         super().reset(seed=seed)
         self.state = self.puzzle
-        return np.array(self.state),{}
+        return np.array(self.state,dtype=np.int32),{}
 
-    def step(self,action):  
+    def step(self,action):   
         self.action = action
         x,y,value = self.action 
         self.state[x][y] = value
         reward = self.rewardfn(self.state,action).reward_fn()
+     
         if reward > 0:
             self.state[x][y] = value
             self.modif_cells.remove(action[:2])
             self.trueaction = True
         else:
-            self.trueaction = False
+            self.true_action = False
 
         info = {}
         done = False
-        return np.array(self.state),reward,False,done,info
+        truncated = False
+        return np.array(self.state,dtype=np.int32),reward,truncated,done,info
 
 
     def render(self):
@@ -232,12 +234,9 @@ class environment(gym.Env):
 
 if __name__=="__main__":
     env = gym.make("sudoku",render_mode = "human")
-    env.reset()
-   
-    for n in range(1000):
-        action = env.action_space.sample() 
-        env.step(action)
-        env.render()
+    env.reset() 
+    env.step((0,1,4))
+    env.render()
 
 
 
