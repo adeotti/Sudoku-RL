@@ -121,15 +121,6 @@ class Gui(QWidget):
         return matrix
 
 
-def modifiables(tensor) -> list: # returns modifiables cells index of a board and a mask
-    modlist = []
-    for i,x in enumerate(tensor):
-        for y in range(9): 
-            if x[y] == 0: 
-                modlist.append((i,y))
-    return modlist
-
-
 class reward_cls: 
     def __init__(self,board:Tensor,action:list):
         self.board = torch.tensor(board).clone()
@@ -137,8 +128,8 @@ class reward_cls:
         self.x,self.y,self.target = self.action
         self.n = int(torch.tensor(9).sqrt())
         self.reward = 0
-        self.non_modifiables = torch.nonzero(self.board)
-               
+        self.mask = (self.board!=0)
+                       
     def region_fn(self,index:list,board:Tensor,xlist,ylist): # returns the region (row ∪ column ∪ block) of a cells  
         x,y = index
         ix,iy = (x//self.n)* self.n , (y//self.n)* self.n
@@ -148,9 +139,10 @@ class reward_cls:
         action_index = local_row * self.n + local_col
         block_ = torch.cat([block[:action_index], block[action_index+1:]]) 
         return   torch.cat([xlist,ylist,block_])  # Region[Region!=0] to filter zeros out
-    
+     
+    @torch.no_grad()
     def reward_fn(self):
-        if torch.all(self.non_modifiables == torch.tensor([self.x,self.y]),dim=1).any():
+        if self.mask[self.x,self.y]:
             return 0
         
         xlist = self.board[self.x]
@@ -181,7 +173,6 @@ class environment(gym.Env):
     def __init__(self,render_mode = None):
         super().__init__()
         self.gui = Gui()
-
         self.action = None
         self.true_action = False
         self.action_space = spaces.Tuple(
@@ -194,9 +185,9 @@ class environment(gym.Env):
         self.observation_space = spaces.Box(0,9,(9,9),dtype=np.int32)
 
         self.state = self.puzzle
+        self.clone = self.state.copy()
         self.modif_cells : list = modifiables(easyBoard)
-        self.rewardfn = reward_cls
-        self.timer = QTimer()
+        self.rewardfn = reward_cls 
         self.render_mode = render_mode
                 
     def reset(self,seed=None, options=None) -> np.array :
@@ -207,13 +198,14 @@ class environment(gym.Env):
     def step(self,action):   
         self.action = action
         x,y,value = self.action 
-        self.state[x][y] = value
+        self.clone[x][y] = value
         reward = self.rewardfn(self.state,action).reward_fn()
      
         if reward > 0:
             self.state[x][y] = value
             self.modif_cells.remove(action[:2])
-            self.trueaction = True
+            self.true_action = True
+            self.clone = self.state
         else:
             self.true_action = False
 
@@ -222,10 +214,9 @@ class environment(gym.Env):
         truncated = False
         return np.array(self.state,dtype=np.int32),reward,truncated,done,info
 
-
     def render(self):
         if self.render_mode == "human":
-            self.state = self.gui.updated(self.action,self.trueaction)
+            self.state = self.gui.updated(self.action,self.true_action)
             self.gui.show()
             app.processEvents()
             time.sleep(0.2)
@@ -234,9 +225,10 @@ class environment(gym.Env):
 
 if __name__=="__main__":
     env = gym.make("sudoku",render_mode = "human")
-    env.reset() 
-    env.step((0,1,4))
-    env.render()
+    env.reset()
+    for n in range(1000):
+        obs,reward,trunc,done,info = env.step(env.action_space.sample())
+        env.render()
 
 
 
