@@ -157,8 +157,40 @@ class reward_cls:
            
 
 class constrain_propagation: # one step constrain propagation 
-    def __init__(self,region):
-        self.region = region
+    def __init__(self,board,idx):
+        self.region = region_fn    
+        self.board = board
+        self.idx = idx
+        #self.def_domain = self.domain(idx)
+        n = self.neighbor_domain()
+        print(n)
+         
+    def domain(self,idx):
+        domain = set(range(1,10)) 
+        region = self.region(idx,self.board)
+        region = set(region[region!=0].tolist())
+        true_domain = list(domain - region)
+        return true_domain
+
+    def global_idx(self,idx):
+        x,y = idx 
+        box_row = x // 9
+        box_col = y // 9 
+        region_idx = box_row * region_size + box_col
+        
+        # global indices 
+        box_row = region_idx // self.region_size
+        box_col = region_idx % self.region_size
+        global_rows = regional_rows + (box_row * self.region_size)
+        global_cols = regional_cols + (box_col * self.region_size)
+        return (global_rows,global_cols)
+
+    def neighbor_domain(self):
+        origin_region = self.region(self.idx,self.board)
+        print(origin_region)
+        neighbor = torch.where(origin_region == 0)
+        print(neighbor)
+
 
 
 app = QApplication.instance()
@@ -170,7 +202,7 @@ register( id="sudoku", entry_point="__main__:environment")
 
 class environment(gym.Env): 
     puzzle = easyBoard
-    metadata = {"render_modes": ["human"],"render_fps":4}   
+    metadata = {"render_modes": ["human"],"render_fps":200}   
     def __init__(self,render_mode = None):
         super().__init__()
         self.gui = Gui()
@@ -206,7 +238,8 @@ class environment(gym.Env):
         region = self.region((x,y),self.clone)
 
         reward = self.rewardfn(self.state,action,region).reward_fn()
-        constrain = self.constrain_prop(region)
+        constrain = self.constrain_prop(self.clone,(x,y))
+        sys.exit()
      
         if reward > 0 and not (x,y) in self.modif_cells:
             self.state[x][y] = value
