@@ -115,7 +115,6 @@ class Gui(QWidget):
         return matrix
 
 
-#@torch.compile(mode="reduce-overhead",fullgraph=True)
 def region_fn(index:list,board:Tensor): # returns the region (row ∪ column ∪ block) of a cells 
     board = torch.tensor(board)
     x,y = index
@@ -156,11 +155,6 @@ class reward_cls:
         return round(self.reward,2)
            
 
-class constrain_propagation: # one step constrain propagation 
-    def __init__(self,region):
-        self.region = region
-
-
 app = QApplication.instance()
 if app is None:
     app = QApplication([])
@@ -188,9 +182,7 @@ class environment(gym.Env):
         self.state = self.puzzle
         self.clone = self.state.copy()
         self.modif_cells = torch.nonzero(torch.tensor(self.state)).tolist()
-        
         self.region = region_fn
-        self.constrain_prop = constrain_propagation
         self.rewardfn = reward_cls 
         self.render_mode = render_mode
                 
@@ -204,7 +196,6 @@ class environment(gym.Env):
         x,y,value = self.action 
         self.clone[x][y] = value
         region = self.region((x,y),self.clone)
-
         reward = self.rewardfn(self.state,action,region).reward_fn()
         constrain = self.constrain_prop(region)
      
