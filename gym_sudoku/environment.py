@@ -1,5 +1,5 @@
 from puzzle import easyBoard,solution
-import random,time,math,sys
+import random,time,sys
 import numpy as np
 
 from PySide6 import QtCore,QtGui
@@ -12,8 +12,6 @@ import gymnasium as gym
 import gymnasium.spaces as spaces
 from gymnasium.envs.registration import register
 
-import PySide6
-
 easyBoard = easyBoard.to(int).numpy()
 
 class Gui(QWidget):
@@ -21,7 +19,7 @@ class Gui(QWidget):
         super().__init__()
         self.setWindowTitle("Sudoku")
         self.setMaximumSize(20,20)
-        self.setWindowIcon(QIcon("icon.png"))
+        self.setWindowIcon(QIcon("game.png"))
         self.game = easyBoard
         self.grid = QGridLayout(self)
         self.grid.setSpacing(0)
