@@ -52,15 +52,9 @@ class Gui(QWidget):
                     self.cells[x][y].setAlignment(QtCore.Qt.AlignCenter)
                     self.grid.addWidget(self.cells[x][y],x,y)
 
-    def updated(self,action = None,true_value : bool = False) -> list[list[int]]: 
-        if action is not None:
-            self.action = action
-            assert isinstance(action,(tuple,list,np.ndarray,torch.Tensor))
-
-            if not len(action) == 3:
-                action = action[0] 
+    def updated(self,action:[int,int,int],true_value : bool = False) -> list[list[int]]: 
+        if action is not None: 
             assert len(action) == 3
-
             row,column,value = action
             # Checking the cell color, not every cell should be modifiable
             styleList = self.cells[row][column].styleSheet().split(";")
@@ -70,7 +64,8 @@ class Gui(QWidget):
             cellColor = styleDict["color"]
 
             if cellColor != "white" and cellColor != "black":
-                self.cells[row][column].setText(str(value))
+                self.cells[row][column].setText(str(value))   # Update cell with value
+                self.game[row][column] = value                # Update grid with value
                 color = ("transparent" if not true_value else "black")
                 ubl = (3 if (column % 3 == 0 and column!= 0) else 0.5)
                 ubt = (3 if (row % 3 == 0 and row!= 0) else 0.5)
@@ -106,25 +101,18 @@ class Gui(QWidget):
                 styleDict = {k.strip() : v.strip() for k,v in (element.split(":") for element in styleList)}
                 cellColor = styleDict["color"]
         
-        list_text = [] 
-        for rw in self.cells :
-            for cells in rw:
-                list_text.append(cells.text())   
-        list_text = [int(element) for element in list_text]
-        matrix = np.array([list_text],dtype=float).reshape(9,9)
-        return matrix
+        return self.game
 
-
-def region_fn(index:list,board:Tensor): # returns the region (row ∪ column ∪ block) of a cells 
-    board = torch.tensor(board)
+#@torch.compile(mode="reduce-overhead",fullgraph=True)
+def region_fn(index:list,board,n = 3): # returns the region (row ∪ column ∪ block) of a cells
+    board = torch.from_numpy(board) 
     x,y = index
-
+ 
     xlist = board[x]
     xlist = torch.cat((xlist[:y],xlist[y+1:]))
     ylist = board[:,y]
     ylist = torch.cat((ylist[:x],ylist[x+1:]))
     
-    n = int(torch.tensor(9).sqrt())
     ix,iy = (x//n)* n , (y//n)* n
     block = torch.flatten(board[ix:ix+n , iy:iy+n])
     local_row = x - ix
@@ -164,7 +152,7 @@ register( id="sudoku", entry_point="__main__:environment")
 
 class environment(gym.Env): 
     puzzle = easyBoard
-    metadata = {"render_modes": ["human"],"render_fps":4}   
+    metadata = {"render_modes": ["human"],"render_fps":60}   
     def __init__(self,render_mode = None):
         super().__init__()
         self.gui = Gui()
@@ -222,12 +210,6 @@ if __name__=="__main__":
     for n in range(100):
         obs,reward,trunc,done,info = env.step(env.action_space.sample())
         env.render()
-
-    env.reset()
-    for n in range(100):
-        obs,reward,trunc,done,info = env.step(env.action_space.sample())
-        env.render()
-
 
 
 
