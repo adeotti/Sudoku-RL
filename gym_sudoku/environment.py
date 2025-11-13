@@ -1,6 +1,5 @@
 from puzzle import easyBoard,solution
-import torch,random,time,math,sys
-from torch import Tensor
+import random,time,math,sys
 import numpy as np
 
 from PySide6 import QtCore,QtGui
@@ -56,9 +55,8 @@ class Gui(QWidget):
         if action is not None: 
             assert len(action) == 3
             row,column,value = action
-            # Checking the cell color, not every cell should be modifiable
             styleList = self.cells[row][column].styleSheet().split(";")
-            if len(styleList) != 8 : 
+            if len(styleList) != 8 : # small bug fix here, more documentation maybe...
                 del styleList[-1]
             styleDict = {k.strip() : v.strip() for k,v in (element.split(":") for element in styleList)}
             cellColor = styleDict["color"]
@@ -103,28 +101,26 @@ class Gui(QWidget):
         
         return self.game
 
-#@torch.compile(mode="reduce-overhead",fullgraph=True)
-def region_fn(index:list,board,n = 3): # returns the region (row ∪ column ∪ block) of a cells
-    board = torch.from_numpy(board) 
+
+def region_fn(index:list,board,n = 3): # returns the region (row ∪ column ∪ 3X3 block) of a cells
     x,y = index
- 
     xlist = board[x]
-    xlist = torch.cat((xlist[:y],xlist[y+1:]))
+    xlist = np.concatenate((xlist[:y],xlist[y+1:]))
     ylist = board[:,y]
-    ylist = torch.cat((ylist[:x],ylist[x+1:]))
+    ylist = np.concatenate((ylist[:x],ylist[x+1:]))
     
     ix,iy = (x//n)* n , (y//n)* n
-    block = torch.flatten(board[ix:ix+n , iy:iy+n])
+    block = board[ix:ix+n , iy:iy+n].flatten()
     local_row = x - ix
     local_col = y - iy
     action_index = local_row * n + local_col
-    block_ = torch.cat([block[:action_index], block[action_index+1:]]) 
-    return   torch.cat([xlist,ylist,block_])
+    block_ = np.concatenate((block[:action_index], block[action_index+1:]))
+    return np.concatenate(([xlist,ylist,block_]))
 
 
 class reward_cls: 
-    def __init__(self,board:Tensor,action:list,region):
-        self.board = torch.tensor(board).clone()
+    def __init__(self,board,action:list,region):
+        self.board = board.copy()
         self.action = action
         self.x,self.y,self.target = self.action
         self.reward = 0
@@ -135,7 +131,7 @@ class reward_cls:
         if self.mask[self.x,self.y]:
             return 0.0 
         self.conflicts = (self.board == 0).sum().tolist()  
-        self.unique = not torch.any(self.region==self.target).item()
+        self.unique = not np.any(self.region==self.target).item()
         if self.unique:
             self.reward = 1 + (self.conflicts*0.1)
         else:
