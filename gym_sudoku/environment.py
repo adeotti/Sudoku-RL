@@ -180,8 +180,7 @@ class environment(gym.Env):
         self.observation_space = spaces.Box(0,9,(9,9),dtype=np.int32)
 
         self.state = self.puzzle
-        self.clone = self.state.copy()
-        self.modif_cells = torch.nonzero(torch.tensor(self.state)).tolist()
+        self.clone = self.state.copy()  
         self.region = region_fn
         self.rewardfn = reward_cls 
         self.render_mode = render_mode
@@ -196,12 +195,9 @@ class environment(gym.Env):
         x,y,value = self.action 
         self.clone[x][y] = value
         region = self.region((x,y),self.clone)
-        reward = self.rewardfn(self.state,action,region).reward_fn()
-        constrain = self.constrain_prop(region)
-     
-        if reward > 0 and not (x,y) in self.modif_cells:
+        reward = self.rewardfn(self.state,action,region).reward_fn() 
+        if reward > 0:
             self.state[x][y] = value
-            self.modif_cells.append((x,y))
             self.true_action = True
             self.clone = self.state
         else:
@@ -223,9 +219,15 @@ class environment(gym.Env):
 if __name__=="__main__":
     env = gym.make("sudoku",render_mode = "human")
     env.reset()
-    for n in range(1000):
+    for n in range(100):
         obs,reward,trunc,done,info = env.step(env.action_space.sample())
         env.render()
+
+    env.reset()
+    for n in range(100):
+        obs,reward,trunc,done,info = env.step(env.action_space.sample())
+        env.render()
+
 
 
 

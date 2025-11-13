@@ -3,7 +3,7 @@ import torch
 # maybe implement an algo to create solvables sudoku
 
 easyBoard = torch.tensor([
-    [0, 0, 0, 5, 3, 1, 0, 0, 0],
+    [8, 0, 0, 5, 3, 1, 0, 0, 0],
     [0, 0, 0, 0, 4, 0, 3, 0, 1],
     [1, 0, 0, 8, 0, 0, 0, 0, 0],
     [0, 0, 4, 0, 0, 5, 6, 0, 0],
@@ -11,7 +11,7 @@ easyBoard = torch.tensor([
     [6, 1, 5, 0, 7, 0, 0, 9, 8],
     [0, 2, 0, 0, 9, 6, 0, 1, 0],
     [0, 5, 7, 2, 0, 8, 0, 0, 6],
-    [0, 6, 1, 7, 5, 3, 0, 2, 4]],dtype=torch.float)
+    [9, 6, 1, 7, 5, 3, 0, 2, 4]],dtype=torch.float)
 
 solution = torch.tensor([
     [8, 4, 9, 5, 3, 1, 7, 6, 2],
