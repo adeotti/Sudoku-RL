@@ -1,5 +1,11 @@
 venv/
 __pycache__/
+
+/dist/
+/build
+/wheels
+/wheelhouse
+
 utils.py
 unitest.py
 ac3.py
