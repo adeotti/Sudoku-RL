@@ -6,7 +6,6 @@ from PySide6 import QtCore,QtGui
 from PySide6.QtWidgets import QApplication,QWidget,QGridLayout,QLineEdit
 from PySide6.QtCore import QTimer
 from PySide6.QtGui import QIcon 
-from puzzle import easyBoard,solution
 
 import gymnasium as gym
 import gymnasium.spaces as spaces
