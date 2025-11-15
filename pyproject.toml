@@ -3,7 +3,7 @@ requires = ["setuptools>=77.0.3"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "gymnasium-sudoku"
+name = "gymnasium_sudoku"
 authors = [{ name = "", email = "adeottidev@gmail.com" }]
 description = "A Sudoku environment for Reinforcement Learning research"
 
