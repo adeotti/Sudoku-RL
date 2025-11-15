@@ -1,4 +1,4 @@
-import num as np
+import numpy as np
 
 # maybe implement an algo to create solvables sudoku
 
