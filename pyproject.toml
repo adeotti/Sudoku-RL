@@ -7,7 +7,7 @@ name = "gymnasium_sudoku"
 authors = [{ name = "", email = "adeottidev@gmail.com" }]
 description = "A Sudoku environment for Reinforcement Learning research"
 
-version = "0.1.4"
+version = "0.1.5"
 requires-python = ">=3.10"
 license = { file = "LICENSE" }
 readme = "README.md"

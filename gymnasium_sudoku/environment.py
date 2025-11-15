@@ -1,4 +1,4 @@
-from puzzle import easyBoard,solution
+from gymnasium_sudoku.puzzle import easyBoard,solution
 import time,sys
 import numpy as np
 
