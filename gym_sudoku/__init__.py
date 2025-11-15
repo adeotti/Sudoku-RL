@@ -1,13 +1,10 @@
 import environment
 from gymnasium.envs.registration import register
 
-__all__ = ["environment"]
-__version__ = ("0.1.0")
+__all__ = ["Gym_env"]
+__version__ = "0.1.2"
 
 register(
-        id="sudoku",
-        entry_point = "environment:Gym_env"
+    id="sudoku-v0",
+    entry_point="gymnasium_sudoku.environment:Gym_env",
 )
-
-
-
