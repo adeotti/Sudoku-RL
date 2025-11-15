@@ -12,8 +12,6 @@ import gymnasium as gym
 import gymnasium.spaces as spaces
 
 
-easyBoard = easyBoard.to(int).numpy()
-
 class Gui(QWidget):
     def __init__(self ):
         super().__init__()
