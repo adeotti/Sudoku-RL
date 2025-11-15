@@ -5,6 +5,7 @@ __pycache__/
 /build
 /wheels
 /wheelhouse
+/*.egg-info
 
 utils.py
 unitest.py
