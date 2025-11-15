@@ -1,4 +1,3 @@
-import environment
 from gymnasium.envs.registration import register
 
 __all__ = ["Gym_env"]
@@ -8,3 +7,4 @@ register(
     id="sudoku-v0",
     entry_point="gymnasium_sudoku.environment:Gym_env",
 )
+
