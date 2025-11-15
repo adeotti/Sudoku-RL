@@ -10,7 +10,7 @@ from puzzle import easyBoard,solution
 
 import gymnasium as gym
 import gymnasium.spaces as spaces
-from gymnasium.envs.registration import register
+
 
 easyBoard = easyBoard.to(int).numpy()
 
@@ -141,10 +141,8 @@ app = QApplication.instance()
 if app is None:
     app = QApplication([])
 
-register( id="sudoku", entry_point="__main__:environment")
 
-
-class environment(gym.Env): 
+class Gym_env(gym.Env): 
     puzzle = easyBoard
     metadata = {"render_modes": ["human"],"render_fps":60}   
     def __init__(self,render_mode = None):
@@ -190,20 +188,10 @@ class environment(gym.Env):
         return np.array(self.state,dtype=np.int32),reward,truncated,done,info
 
     def render(self):
-        if self.render_mode == "human":
+        if self.render_mode == "human": 
             self.state = self.gui.updated(self.action,self.true_action)
             self.gui.show()
             app.processEvents()
-            time.sleep(0.2)
+            time.sleep(0.1)
         else :
             sys.exit("render_mode attribute should be set to \"human\"")
-
-if __name__=="__main__":
-    env = gym.make("sudoku",render_mode = "human")
-    env.reset()
-    for n in range(100):
-        obs,reward,trunc,done,info = env.step(env.action_space.sample())
-        env.render()
-
-
-
